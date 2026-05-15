@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp">
+
+    <!-- TITLE -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Printer"
+        android:textColor="#2E3192"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <!-- CURRENT PRINTER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        android:background="#EEF1FF">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Current:"
+            android:textColor="#2E3192"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCurrentPrinter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" None"
+            android:textColor="#333333"
+            android:textSize="11sp"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
+
+    <!-- LIST LABEL -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Available Bluetooth Printers"
+        android:textColor="#666666"
+        android:textSize="10sp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="4dp" />
+
+    <!-- PRINTER LIST -->
+    <ListView
+        android:id="@+id/listPrinters"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:background="#FAFAFA"
+        android:divider="#E0E0E0"
+        android:dividerHeight="1dp" />
+
+    <!-- EMPTY STATE -->
+    <LinearLayout
+        android:id="@+id/layoutNoPrinters"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="12dp"
+        android:layout_marginTop="8dp"
+        android:background="#FFF1F2"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚠ No printers found"
+            android:textColor="#F5333F"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvNoPrinters"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Please pair a Bluetooth printer in device settings."
+            android:textColor="#A32028"
+            android:textSize="10sp"
+            android:layout_marginTop="4dp"
+            android:gravity="center" />
+    </LinearLayout>
+
+    <!-- ACTION BUTTON -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnClose"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="12dp"
+        android:text="Close"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:backgroundTint="#2E3192" />
+
+</LinearLayout>

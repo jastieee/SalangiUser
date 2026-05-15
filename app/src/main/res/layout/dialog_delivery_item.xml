@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp">
+
+    <!-- ITEM HEADER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#EEF1FF"
+        android:padding="10dp">
+
+        <TextView
+            android:id="@+id/tvDialogCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ITEM001"
+            android:textColor="#2E3192"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvDialogDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sample description"
+            android:textColor="#333333"
+            android:textSize="11sp"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- QUANTITY -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Quantity"
+        android:textColor="#2E3192"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:layout_marginTop="14dp" />
+
+    <EditText
+        android:id="@+id/etDialogQty"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/input_border"
+        android:gravity="center"
+        android:inputType="numberDecimal"
+        android:textColor="#000000"
+        android:textSize="13sp"
+        android:hint="Enter quantity" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Unit of Measurement"
+        android:textColor="#2E3192"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:layout_marginTop="14dp" />
+
+    <Spinner
+        android:id="@+id/spinnerDialogUom"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/input_border" />
+
+    <TextView
+        android:id="@+id/tvDialogConvertedQty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Converted Qty: 0 PCS"
+        android:textColor="#666666"
+        android:textSize="11sp"
+        android:layout_marginTop="6dp" />
+
+    <!-- TOTAL COST -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Total Delivery Cost"
+        android:textColor="#2E3192"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:layout_marginTop="14dp" />
+
+    <EditText
+        android:id="@+id/etDialogTotalCost"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/input_border"
+        android:gravity="center"
+        android:inputType="numberDecimal"
+        android:textColor="#000000"
+        android:textSize="13sp"
+        android:hint="Enter total cost" />
+
+    <!-- UNIT COST RESULT -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#EDFFF3"
+        android:padding="10dp"
+        android:layout_marginTop="14dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cost per unit:"
+            android:textColor="#00A651"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvDialogUnitCost"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" ₱0.00"
+            android:textColor="#00A651"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
+
+</LinearLayout>

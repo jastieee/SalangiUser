@@ -1,0 +1,12 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp" android:background="#FFFFFF">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Manual Promo" android:textColor="#2E3192" android:textStyle="bold" android:textSize="20sp"/>
+    <TextView android:id="@+id/tvPromoItemName" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Item name" android:textColor="#333333" android:textStyle="bold" android:textSize="13sp" android:layout_marginTop="10dp"/>
+    <TextView android:id="@+id/tvPromoOriginalPrice" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="SRP: ₱0.00" android:textColor="#F5333F" android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="8dp"/>
+    <EditText android:id="@+id/etPromoPrice" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Promo selling price" android:inputType="numberDecimal" android:singleLine="true" android:textSize="16sp" android:layout_marginTop="12dp"/>
+    <EditText android:id="@+id/etPromoReason" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Reason" android:singleLine="true" android:text="Vendor promo" android:textSize="14sp" android:layout_marginTop="8dp"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="end" android:layout_marginTop="18dp">
+        <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnRemovePromo" android:layout_width="wrap_content" android:layout_height="44dp" android:text="REMOVE" android:textColor="#FFFFFF" android:textStyle="bold" android:backgroundTint="#F5333F" android:layout_marginEnd="8dp"/>
+        <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnCancelPromo" android:layout_width="wrap_content" android:layout_height="44dp" android:text="CANCEL" android:textColor="#333333" android:textStyle="bold" android:backgroundTint="#E0E0E0" android:layout_marginEnd="8dp"/>
+        <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnApplyPromo" android:layout_width="wrap_content" android:layout_height="44dp" android:text="APPLY" android:textColor="#FFFFFF" android:textStyle="bold" android:backgroundTint="#00A651"/>
+    </LinearLayout>
+</LinearLayout>

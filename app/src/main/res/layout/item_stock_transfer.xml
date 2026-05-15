@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <!-- Main row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvProductCode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="CODE001"
+            android:textSize="10sp"
+            android:textColor="#666666"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:text="Item description"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#2E3192"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp" />
+
+        <TextView
+            android:id="@+id/tvUom"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="PCS"
+            android:textSize="10sp"
+            android:textColor="#666666"
+            android:gravity="center"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/tvWarehouseQty"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="25"
+            android:textSize="11sp"
+            android:textColor="#2E3192"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:singleLine="true" />
+
+        <EditText
+            android:id="@+id/etTransferQty"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="2"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/input_border"
+            android:gravity="center"
+            android:hint="0"
+            android:inputType="numberDecimal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textColor="#000000"
+            android:textSize="10sp"
+            android:singleLine="true" />
+
+        <EditText
+            android:id="@+id/etUnitPrice"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="2"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/input_border"
+            android:gravity="end|center_vertical"
+            android:hint="0.00"
+            android:inputType="numberDecimal"
+            android:paddingStart="4dp"
+            android:paddingEnd="6dp"
+            android:textColor="#000000"
+            android:textSize="10sp"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/tvSubtotal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="₱0.00"
+            android:textSize="11sp"
+            android:textColor="#00A651"
+            android:textStyle="bold"
+            android:gravity="end"
+            android:singleLine="true"
+            android:paddingStart="4dp" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnRemove"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="6dp"
+            android:backgroundTint="#F5333F"
+            android:text="✕"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- Stock warning row -->
+    <TextView
+        android:id="@+id/tvStockWarning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="#FFF1F2"
+        android:paddingStart="6dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="4dp"
+        android:text="Transfer quantity exceeds warehouse stock."
+        android:textSize="10sp"
+        android:textColor="#F5333F"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+</LinearLayout>

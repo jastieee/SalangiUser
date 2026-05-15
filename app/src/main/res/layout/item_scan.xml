@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="52dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="#FFFFFF"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <!-- PRODUCT CODE -->
+    <TextView
+        android:id="@+id/tvProductCode"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:text="CODE001"
+        android:textSize="10sp"
+        android:textColor="#666666"
+        android:singleLine="true"
+        android:ellipsize="end" />
+
+    <!-- DESCRIPTION -->
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="4"
+        android:text="Item description"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:textColor="#2E3192"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp" />
+
+    <!-- UNIT PRICE -->
+    <TextView
+        android:id="@+id/tvUnitPrice"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:text="25.00"
+        android:textSize="10sp"
+        android:textColor="#333333"
+        android:gravity="end"
+        android:singleLine="true" />
+
+    <!-- QUANTITY -->
+    <TextView
+        android:id="@+id/tvQty"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:text="10"
+        android:textSize="12sp"
+        android:textColor="#2E3192"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:singleLine="true" />
+
+    <!-- SUBTOTAL -->
+    <TextView
+        android:id="@+id/tvSubtotal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:text="₱250.00"
+        android:textSize="11sp"
+        android:textColor="#00A651"
+        android:textStyle="bold"
+        android:gravity="end"
+        android:singleLine="true"
+        android:paddingStart="4dp" />
+
+    <!-- REMOVE BUTTON -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnRemove"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:text="✕"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#F5333F"
+        android:layout_marginStart="6dp" />
+
+</LinearLayout>

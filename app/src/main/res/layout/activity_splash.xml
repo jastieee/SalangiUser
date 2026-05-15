@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#FFFFFF">
+
+    <!-- SÁLÁNG Í KO PÛ Title -->
+    <LinearLayout
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="12dp">
+
+        <TextView
+            android:id="@+id/ltrS"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="S"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#6A3FA0"/>
+
+        <TextView
+            android:id="@+id/ltrA"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Á"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#F5A623"/>
+
+        <TextView
+            android:id="@+id/ltrL"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="L"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#6A3FA0"/>
+
+        <TextView
+            android:id="@+id/ltrA2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Á"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#F5A623"/>
+
+        <TextView
+            android:id="@+id/ltrN"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="N"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#6A3FA0"/>
+
+        <TextView
+            android:id="@+id/ltrG"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="G"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#F5A623"/>
+
+        <TextView
+            android:id="@+id/ltrI"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Í"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#6A3FA0"/>
+
+        <TextView
+            android:id="@+id/ltrSpace"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" "
+            android:textSize="36sp"/>
+
+        <TextView
+            android:id="@+id/ltrK"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="K"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#F5A623"/>
+
+        <TextView
+            android:id="@+id/ltrO"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="O"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#6A3FA0"/>
+
+        <TextView
+            android:id="@+id/ltrSpace2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" "
+            android:textSize="36sp"/>
+
+        <TextView
+            android:id="@+id/ltrP"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="P"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#F5A623"/>
+
+        <TextView
+            android:id="@+id/ltrU"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Û"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="#6A3FA0"/>
+
+    </LinearLayout>
+
+    <!-- Subtitle -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="VARIETY STORE"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#F5A623"
+        android:letterSpacing="0.15"
+        android:gravity="center"/>
+
+    <!-- Loading -->
+    <TextView
+        android:id="@+id/tvLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Loading..."
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:layout_marginTop="24dp"/>
+
+</LinearLayout>

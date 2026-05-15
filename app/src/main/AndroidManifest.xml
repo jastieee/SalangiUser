@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 10 and 11 (API 29-30) — old BT permissions -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
+    <!-- Android 12+ (API 31+) — new BT permissions -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SalangiKoPu"
+        tools:targetApi="31">
+
+        <activity
+            android:name=".Activity.SplashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".Activity.LoginActivity"
+            android:exported="false" />
+
+        <activity android:name=".Activity.MainActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".Activity.WarehouseInventoryActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateAlwaysHidden"/>
+
+        <activity
+            android:name=".Activity.StoreInventoryActivity"
+            android:exported="false"
+             />
+
+        <activity android:name=".Activity.DeliveryInActivity"
+            android:exported="false"
+            android:windowSoftInputMode="stateHidden|adjustResize"
+            />
+
+        <activity android:name=".Activity.RegisterProductActivity"
+            android:exported="false"
+            />
+
+        <activity android:name=".Activity.RefundItemsActivity"
+            android:exported="false"
+             />
+
+        <activity android:name=".Activity.StockTransferActivity"
+            android:exported="false"
+
+            android:windowSoftInputMode="stateAlwaysHidden"/>
+
+        <activity android:name=".Activity.TransferConfirmationActivity"
+            android:exported="false"
+           />
+
+        <activity android:name=".Activity.ScanItemsActivity"
+            android:exported="false"
+
+            android:windowSoftInputMode="stateAlwaysHidden"/>
+
+        <activity
+            android:name=".Activity.RefundDecisionActivity"
+            android:exported="false" />
+
+        <activity android:name=".Activity.BadOrderActivity"
+            android:exported="false"/>
+    </application>
+
+</manifest>
