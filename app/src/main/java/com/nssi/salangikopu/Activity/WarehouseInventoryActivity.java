@@ -247,4 +247,6 @@ public class WarehouseInventoryActivity extends AppCompatActivity {
                 .replaceAll("[^0-9A-Za-z]", "");
     }
 
+
+
 }

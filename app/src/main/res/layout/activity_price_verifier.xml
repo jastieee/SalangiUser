@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- HEADER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#2E3192"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnBack"
+            android:layout_width="60dp"
+            android:layout_height="34dp"
+            android:backgroundTint="#FFFFFF"
+            android:text="←"
+            android:textAllCaps="false"
+            android:textColor="#2E3192"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingStart="10dp"
+            android:text="Price Verifier"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvFocusIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⬤"
+            android:textColor="#F5333F"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- STATUS STRIP -->
+    <TextView
+        android:id="@+id/tvScanStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#EEF1FF"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:text="Waiting for scan…"
+        android:textColor="#2E3192"
+        android:textSize="11sp"
+        android:textStyle="italic" />
+
+    <!-- HIDDEN BARCODE INPUT -->
+    <EditText
+        android:id="@+id/etBarcode"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:alpha="0"
+        android:background="@null"
+        android:cursorVisible="false"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:imeOptions="actionDone"
+        android:inputType="text"
+        android:singleLine="true"
+        android:textColor="#00000000"
+        android:textColorHighlight="#00000000" />
+
+    <!-- DISPLAY AREA -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#FFFFFF"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="24dp"
+        android:paddingTop="32dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="32dp">
+
+        <!-- SKU -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.15"
+            android:text="SKU"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvSku"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:text="—"
+            android:textColor="#2E3192"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <!-- ITEM NAME (BIG + BOLD) -->
+        <TextView
+            android:id="@+id/tvItemName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:gravity="center"
+            android:maxLines="4"
+            android:text="Scan a barcode to begin"
+            android:textColor="#111111"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <!-- PRICE (HUGE) -->
+        <TextView
+            android:id="@+id/tvPrice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:gravity="center"
+            android:text="₱0.00"
+            android:textColor="#00A651"
+            android:textSize="64sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</LinearLayout>

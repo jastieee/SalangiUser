@@ -73,14 +73,32 @@ public class WarehouseInventoryAdapter extends ArrayAdapter<WarehouseInventoryIt
         if (value == null) return "";
 
         String text = value
-                .replace("️", "")
+                .replace("\uFE0F", "")   // variation selector (the invisible ️ char)
                 .replace("–", "-")
                 .replace("—", "-")
                 .replaceAll("\\s+", " ")
                 .trim();
 
+        // Cut off everything after a tagline delimiter.
+        // Pipe is the most common in your data (e.g. "Product | Marketing tagline").
+        text = text.replaceFirst("\\s*\\|.*$", "").trim();
+
+        // Colon-based taglines: "Product: best snack ever"
+        text = text.replaceFirst("\\s*:\\s+.*$", "").trim();
+
+        // Bullet / middot separators
+        text = text.replaceFirst("\\s*[•·●].*$", "").trim();
+
+        // Tilde separators sometimes used in PH e-commerce listings
+        text = text.replaceFirst("\\s*~\\s+.*$", "").trim();
+
+        // Dash-based tagline (e.g. "Brand - The original since 1995")
         text = text.replaceFirst("\\s*-\\s+.*$", "").trim();
+
+        // Exclamation tagline
         text = text.replaceFirst("\\s+!\\s*.*$", "").trim();
+
+        // Marketing-phrase tails
         text = text.replaceFirst("(?i)\\s+is the\\s+.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+perfect for\\s+.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+great for\\s+.*$", "").trim();

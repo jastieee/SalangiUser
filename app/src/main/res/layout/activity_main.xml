@@ -372,6 +372,37 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Price Verifier -->
+            <LinearLayout
+                android:id="@+id/cardPriceVerifier"
+                android:layout_width="0dp"
+                android:layout_height="92dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="4dp"
+                android:background="@drawable/card_bg_purple"
+                android:elevation="2dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🏷️"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:maxLines="2"
+                    android:text="Price Verifier"
+                    android:textColor="#6A1B9A"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
         </GridLayout>
 
     </ScrollView>

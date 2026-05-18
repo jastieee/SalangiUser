@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
 
     TextView tvWelcome, tvDateTime;
     LinearLayout cardWarehouseInventory, cardStoreInventory, cardScanItems,
-            cardStockTransfers, cardDeliveryIn, cardRefundItems, cardTransferConfirmations;
+            cardStockTransfers, cardDeliveryIn, cardRefundItems, cardTransferConfirmations, cardPriceVerifier;
 
     Handler clockHandler = new Handler();
     Runnable clockRunnable;
@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
         cardDeliveryIn         = findViewById(R.id.cardDeliveryIn);
         cardRefundItems        = findViewById(R.id.cardRefundItems);
         cardTransferConfirmations = findViewById(R.id.cardTransferConfirmations);
+        cardPriceVerifier       = findViewById(R.id.cardPriceVerifier);
 
         userId        = getIntent().getIntExtra("user_id", -1);
         roleId        = getIntent().getIntExtra("role_id", -1);
@@ -159,6 +160,13 @@ public class MainActivity extends AppCompatActivity {
 
         findViewById(R.id.cardBadOrder).setOnClickListener(v -> {
             Intent intent = new Intent(this, BadOrderActivity.class);
+            intent.putExtra("user_id", userId);
+            intent.putExtra("store_id", storeId);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.cardPriceVerifier).setOnClickListener(v -> {
+            Intent intent = new Intent(this, PriceVerifierActivity.class);
             intent.putExtra("user_id", userId);
             intent.putExtra("store_id", storeId);
             startActivity(intent);
