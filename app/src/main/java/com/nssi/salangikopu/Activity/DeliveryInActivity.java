@@ -141,8 +141,88 @@ public class DeliveryInActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+        setupFieldFocusBehavior();
+
+        // Start with barcode scanner ready
+        returnFocusToScanner();
     }
 
+    private void setupFieldFocusBehavior() {
+
+        // Barcode scanner — same as before
+        etBarcode.setOnEditorActionListener((v, actionId, event) -> {
+            handleScan();
+            return true;
+        });
+        etBarcode.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() == KeyEvent.ACTION_UP
+                    && keyCode == KeyEvent.KEYCODE_ENTER) {
+                handleScan();
+                return true;
+            }
+            return false;
+        });
+
+        // Supplier: when user picks from dropdown or closes keyboard → return to scanner
+        actSupplier.setOnEditorActionListener((v, actionId, event) -> {
+            returnFocusToScanner();
+            return true;
+        });
+        actSupplier.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) actSupplier.showDropDown();
+            else returnFocusToScanner();   // keyboard closed or focus left → back to scanner
+        });
+
+        // PO Number: Enter/Done → return to scanner
+        etPoNumber.setOnEditorActionListener((v, actionId, event) -> {
+            returnFocusToScanner();
+            return true;
+        });
+        etPoNumber.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) returnFocusToScanner();
+        });
+
+        // SI: Enter/Done → jump to DR
+        etInvoiceNo.setOnEditorActionListener((v, actionId, event) -> {
+            etDrNo.requestFocus();
+            return true;
+        });
+        etInvoiceNo.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                // only return to scanner if DR also lost focus (user tapped away)
+            }
+        });
+
+        // DR: Enter/Done → return to scanner
+        etDrNo.setOnEditorActionListener((v, actionId, event) -> {
+            returnFocusToScanner();
+            return true;
+        });
+        etDrNo.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) returnFocusToScanner();
+        });
+
+        // Warehouse spinner: after selection → return to scanner
+        spinnerWarehouse.setOnTouchListener((v, event) -> {
+            // spinner will handle its own popup; after dismiss we grab focus back
+            spinnerWarehouse.post(this::returnFocusToScanner);
+            return false;
+        });
+    }
+
+    private void returnFocusToScanner() {
+        etBarcode.post(() -> {
+            etBarcode.requestFocus();
+            // hide keyboard so hardware scanner works cleanly
+            android.view.inputmethod.InputMethodManager imm =
+                    (android.view.inputmethod.InputMethodManager)
+                            getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(etBarcode.getWindowToken(), 0);
+            }
+        });
+    }
     private void handleScan() {
         long now = System.currentTimeMillis();
         if (now - lastScanTime < DEBOUNCE_MS) {

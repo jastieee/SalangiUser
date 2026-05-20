@@ -104,7 +104,12 @@ public class ScanItemsActivity extends AppCompatActivity {
 
         tvStoreName.setText(storeName);
 
-        adapter = new ScanItemAdapter(this, scannedItems, this::updateSummary);
+        adapter = new ScanItemAdapter(
+                this,
+                scannedItems,
+                this::updateSummary,
+                () -> etBarcode.requestFocus()   // return focus to hidden scanner after modal closes
+        );
         listScannedItems.setAdapter(adapter);
 
         listScannedItems.setDescendantFocusability(ListView.FOCUS_BLOCK_DESCENDANTS);

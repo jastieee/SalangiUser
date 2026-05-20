@@ -1,12 +1,12 @@
 package com.nssi.salangikopu.Adapter;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,15 +26,27 @@ public class StockTransferAdapter extends ArrayAdapter<StockTransferItem> {
     private final DecimalFormat fmt = new DecimalFormat("#,##0.##");
     private final DecimalFormat costFmt = new DecimalFormat("#,##0.00");
     private final OnTotalChangedListener listener;
+    private final OnDialogDismissedListener dismissListener;
 
     public interface OnTotalChangedListener {
         void onTotalChanged();
     }
 
+    public interface OnDialogDismissedListener {
+        void onDialogDismissed();
+    }
+
     public StockTransferAdapter(Context context, List<StockTransferItem> items,
                                 OnTotalChangedListener listener) {
+        this(context, items, listener, null);
+    }
+
+    public StockTransferAdapter(Context context, List<StockTransferItem> items,
+                                OnTotalChangedListener listener,
+                                OnDialogDismissedListener dismissListener) {
         super(context, 0, items);
         this.listener = listener;
+        this.dismissListener = dismissListener;
     }
 
     @NonNull
@@ -50,8 +62,8 @@ public class StockTransferAdapter extends ArrayAdapter<StockTransferItem> {
             holder.tvProductCode = convertView.findViewById(R.id.tvProductCode);
             holder.tvDescription = convertView.findViewById(R.id.tvDescription);
             holder.tvWarehouseQty = convertView.findViewById(R.id.tvWarehouseQty);
-            holder.etTransferQty = convertView.findViewById(R.id.etTransferQty);
-            holder.etUnitPrice = convertView.findViewById(R.id.etUnitPrice);
+            holder.tvTransferQty = convertView.findViewById(R.id.tvTransferQty);
+            holder.tvUnitPrice = convertView.findViewById(R.id.tvUnitPrice);
             holder.tvSubtotal = convertView.findViewById(R.id.tvSubtotal);
             holder.btnRemove = convertView.findViewById(R.id.btnRemove);
             holder.tvStockWarning = convertView.findViewById(R.id.tvStockWarning);
@@ -61,77 +73,50 @@ public class StockTransferAdapter extends ArrayAdapter<StockTransferItem> {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        StockTransferItem item = getItem(position);
+        final StockTransferItem item = getItem(position);
         if (item == null) return convertView;
-
-        if (holder.transferQtyWatcher != null) {
-            holder.etTransferQty.removeTextChangedListener(holder.transferQtyWatcher);
-        }
-        if (holder.unitPriceWatcher != null) {
-            holder.etUnitPrice.removeTextChangedListener(holder.unitPriceWatcher);
-        }
 
         holder.tvProductCode.setText(item.getProductCode());
         holder.tvDescription.setText(item.getDescription());
         holder.tvWarehouseQty.setText(fmt.format(item.getWarehouseQty()));
-        holder.etTransferQty.setText(fmt.format(item.getTransferQty()));
-        holder.etUnitPrice.setText(costFmt.format(item.getUnitPrice()));
+        holder.tvTransferQty.setText(fmt.format(item.getTransferQty()));
+        holder.tvUnitPrice.setText(costFmt.format(item.getUnitPrice()));
         holder.tvSubtotal.setText("₱" + costFmt.format(item.getSubtotal()));
 
-        holder.transferQtyWatcher = new SimpleTextWatcher() {
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    String val = s.toString().trim();
-                    double qty = val.isEmpty() ? 0 : Double.parseDouble(val);
+        // Tap qty -> modal
+        holder.tvTransferQty.setOnClickListener(v ->
+                showNumericInputDialog(
+                        "Enter Quantity",
+                        item.getProductCode() + " — " + item.getDescription(),
+                        item.getTransferQty(),
+                        fmt,
+                        newValue -> {
+                            item.setTransferQty(newValue);
+                            notifyDataSetChanged();
+                            if (listener != null) listener.onTotalChanged();
+                        }
+                )
+        );
 
-                    if (qty < 0) qty = 0;
-
-                    item.setTransferQty(qty);
-                    holder.tvSubtotal.setText("₱" + costFmt.format(item.getSubtotal()));
-                    updateWarning(holder, item);
-
-                    if (listener != null) {
-                        listener.onTotalChanged();
-                    }
-
-                } catch (Exception ignored) {
-                }
-            }
-        };
-
-        holder.unitPriceWatcher = new SimpleTextWatcher() {
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                try {
-                    String val = s.toString().trim();
-                    double price = val.isEmpty() ? 0 : Double.parseDouble(val);
-
-                    if (price < 0) price = 0;
-
-                    item.setUnitPrice(price);
-                    holder.tvSubtotal.setText("₱" + costFmt.format(item.getSubtotal()));
-                    updateWarning(holder, item);
-
-                    if (listener != null) {
-                        listener.onTotalChanged();
-                    }
-
-                } catch (Exception ignored) {
-                }
-            }
-        };
-
-        holder.etTransferQty.addTextChangedListener(holder.transferQtyWatcher);
-        holder.etUnitPrice.addTextChangedListener(holder.unitPriceWatcher);
+//        // Tap price -> modal
+//        holder.tvUnitPrice.setOnClickListener(v ->
+//                showNumericInputDialog(
+//                        "Enter Unit Price",
+//                        item.getProductCode() + " — " + item.getDescription(),
+//                        item.getUnitPrice(),
+//                        costFmt,
+//                        newValue -> {
+//                            item.setUnitPrice(newValue);
+//                            notifyDataSetChanged();
+//                            if (listener != null) listener.onTotalChanged();
+//                        }
+//                )
+//        );
 
         holder.btnRemove.setOnClickListener(v -> {
             remove(item);
             notifyDataSetChanged();
-
-            if (listener != null) {
-                listener.onTotalChanged();
-            }
+            if (listener != null) listener.onTotalChanged();
         });
 
         updateWarning(holder, item);
@@ -143,6 +128,75 @@ public class StockTransferAdapter extends ArrayAdapter<StockTransferItem> {
         return convertView;
     }
 
+    private interface OnValueEntered {
+        void onValue(double value);
+    }
+
+    private void showNumericInputDialog(String title, String subtitle, double currentValue,
+                                        DecimalFormat displayFmt, OnValueEntered callback) {
+        View dialogView = LayoutInflater.from(getContext())
+                .inflate(R.layout.dialog_qty_input, null);
+
+        TextView tvTitle = dialogView.findViewById(R.id.tvQtyDialogTitle);
+        TextView tvSubtitle = dialogView.findViewById(R.id.tvQtyDialogSubtitle);
+        EditText etValue = dialogView.findViewById(R.id.etQtyDialogValue);
+        Button btnCancel = dialogView.findViewById(R.id.btnQtyDialogCancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btnQtyDialogConfirm);
+
+        tvTitle.setText(title);
+        tvSubtitle.setText(subtitle);
+
+        // Plain numeric string (no thousand separators) so user can edit easily
+        DecimalFormat plain = new DecimalFormat("0.##");
+        etValue.setText(plain.format(currentValue));
+        etValue.setSelection(etValue.getText().length());
+
+        AlertDialog dialog = new AlertDialog.Builder(getContext())
+                .setView(dialogView)
+                .setCancelable(false)
+                .create();
+
+        // Make sure soft keyboard pops up automatically
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+            );
+        }
+
+        dialog.show();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(
+                    (int) (getContext().getResources().getDisplayMetrics().widthPixels * 0.88),
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+        }
+
+        etValue.requestFocus();
+
+        btnConfirm.setOnClickListener(v -> {
+            String raw = etValue.getText().toString().trim();
+            double value = 0;
+            try {
+                if (!raw.isEmpty()) value = Double.parseDouble(raw);
+            } catch (NumberFormatException ignored) {
+            }
+            if (value < 0) value = 0;
+
+            dialog.dismiss();
+            callback.onValue(value);
+
+            // Return focus to hidden scanner input
+            if (dismissListener != null) dismissListener.onDialogDismissed();
+        });
+
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (dismissListener != null) dismissListener.onDialogDismissed();
+        });
+    }
+
     private void updateWarning(ViewHolder holder, StockTransferItem item) {
         if (item.isOverStock()) {
             holder.tvStockWarning.setVisibility(View.VISIBLE);
@@ -152,10 +206,10 @@ public class StockTransferAdapter extends ArrayAdapter<StockTransferItem> {
                             fmt.format(item.getWarehouseQty()) +
                             "). Please reduce the quantity to match what the store confirmed."
             );
-            holder.etTransferQty.setBackgroundColor(Color.parseColor("#FFEBEE"));
+            holder.tvTransferQty.setBackgroundColor(Color.parseColor("#FFEBEE"));
         } else {
             holder.tvStockWarning.setVisibility(View.GONE);
-            holder.etTransferQty.setBackgroundResource(R.drawable.input_border);
+            holder.tvTransferQty.setBackgroundResource(R.drawable.input_border);
         }
     }
 
@@ -173,23 +227,10 @@ public class StockTransferAdapter extends ArrayAdapter<StockTransferItem> {
         TextView tvProductCode;
         TextView tvDescription;
         TextView tvWarehouseQty;
+        TextView tvTransferQty;   // was EditText
+        TextView tvUnitPrice;     // was EditText
         TextView tvSubtotal;
         TextView tvStockWarning;
-        EditText etTransferQty;
-        EditText etUnitPrice;
         Button btnRemove;
-
-        TextWatcher transferQtyWatcher;
-        TextWatcher unitPriceWatcher;
-    }
-
-    private abstract static class SimpleTextWatcher implements TextWatcher {
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        }
-
-        @Override
-        public void afterTextChanged(Editable s) {
-        }
     }
 }

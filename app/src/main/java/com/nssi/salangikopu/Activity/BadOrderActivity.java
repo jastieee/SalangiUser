@@ -15,7 +15,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatActivity;
+
 import com.nssi.salangikopu.Adapter.BadOrderAdapter;
 import com.nssi.salangikopu.Connection.ENV;
 import com.nssi.salangikopu.Model.BadOrderItem;
@@ -39,8 +39,8 @@ import java.util.Map;
 
 public class BadOrderActivity extends AppCompatActivity {
 
-    EditText etBoNumber, etSupplierName, etBarcode;
-    Spinner spinnerStore;
+    EditText etBoNumber, etBarcode;
+    Spinner spinnerSupplier, spinnerWarehouse;
     ListView listBadOrderItems;
     TextView tvItemCount, tvTotalAmount;
     Button btnSave, btnGenerateBo, btnBack;
@@ -48,41 +48,45 @@ public class BadOrderActivity extends AppCompatActivity {
     List<BadOrderItem> badOrderItems = new ArrayList<>();
     BadOrderAdapter adapter;
 
-    Map<Integer, String> storeMap = new LinkedHashMap<>();
-    List<Integer> storeIds = new ArrayList<>();
+    Map<Integer, String> warehouseMap = new LinkedHashMap<>();
+    List<Integer> warehouseIds = new ArrayList<>();
+
+    Map<Integer, String> supplierMap = new LinkedHashMap<>();
+    List<Integer> supplierIds = new ArrayList<>();
 
     int userId = -1;
-    int storeId = -1;
+    int storeId = -1; // legacy passthrough only
 
     private long lastScanTime = 0;
     private static final long DEBOUNCE_MS = 100;
 
     DecimalFormat pesoFmt = new DecimalFormat("#,##0.00");
-    DecimalFormat qtyFmt = new DecimalFormat("#,##0.##");
+    DecimalFormat qtyFmt  = new DecimalFormat("#,##0.##");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bad_order);
 
-        etBoNumber = findViewById(R.id.etBoNumber);
-        etSupplierName = findViewById(R.id.etSupplierName);
-        etBarcode = findViewById(R.id.etBarcode);
-        spinnerStore = findViewById(R.id.spinnerStore);
+        etBoNumber        = findViewById(R.id.etBoNumber);
+        etBarcode         = findViewById(R.id.etBarcode);
+        spinnerSupplier   = findViewById(R.id.spinnerSupplier);
+        spinnerWarehouse  = findViewById(R.id.spinnerWarehouse);
         listBadOrderItems = findViewById(R.id.listBadOrderItems);
-        tvItemCount = findViewById(R.id.tvItemCount);
-        tvTotalAmount = findViewById(R.id.tvTotalAmount);
-        btnSave = findViewById(R.id.btnSave);
-        btnGenerateBo = findViewById(R.id.btnGenerateBo);
-        btnBack = findViewById(R.id.btnBack);
+        tvItemCount       = findViewById(R.id.tvItemCount);
+        tvTotalAmount     = findViewById(R.id.tvTotalAmount);
+        btnSave           = findViewById(R.id.btnSave);
+        btnGenerateBo     = findViewById(R.id.btnGenerateBo);
+        btnBack           = findViewById(R.id.btnBack);
 
-        userId = getIntent().getIntExtra("user_id", -1);
+        userId  = getIntent().getIntExtra("user_id", -1);
         storeId = getIntent().getIntExtra("store_id", -1);
 
         adapter = new BadOrderAdapter(this, badOrderItems, this::updateSummary);
         listBadOrderItems.setAdapter(adapter);
 
-        loadStores();
+        loadWarehouses();
+        loadSuppliers();
         generateBoNumber();
 
         btnGenerateBo.setOnClickListener(v -> generateBoNumber());
@@ -120,12 +124,10 @@ public class BadOrderActivity extends AppCompatActivity {
 
     private void handleScan() {
         long now = System.currentTimeMillis();
-
         if (now - lastScanTime < DEBOUNCE_MS) {
             etBarcode.setText("");
             return;
         }
-
         lastScanTime = now;
 
         String raw = etBarcode.getText().toString().trim();
@@ -138,23 +140,22 @@ public class BadOrderActivity extends AppCompatActivity {
     }
 
     private void lookupProduct(String scannedCode) {
-        int selectedStoreId = getSelectedStoreId();
+        int wid = getSelectedWarehouseId();
 
-        if (selectedStoreId <= 0) {
-            Toast.makeText(this, "Please select a store first.", Toast.LENGTH_SHORT).show();
+        if (wid <= 0) {
+            Toast.makeText(this, "Please select a warehouse first.", Toast.LENGTH_SHORT).show();
             etBarcode.requestFocus();
             return;
         }
 
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 String encoded = URLEncoder.encode(scannedCode, "UTF-8");
                 URL url = new URL(
                         ENV.BAD_ORDER_LOOKUP_URL +
                                 "?code=" + encoded +
-                                "&store_id=" + selectedStoreId
+                                "&warehouse_id=" + wid
                 );
 
                 conn = (HttpURLConnection) url.openConnection();
@@ -167,40 +168,34 @@ public class BadOrderActivity extends AppCompatActivity {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
-
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
 
                 if (!json.optBoolean("success", false)) {
+                    final String msg = json.optString("message", "Product not found.");
                     runOnUiThread(() -> {
-                        Toast.makeText(this, "Product not found.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
                         etBarcode.requestFocus();
                     });
                     return;
                 }
 
                 JSONObject p = json.getJSONObject("product");
-
-                String code = p.getString("product_code");
-                String desc = p.optString("item_description", "");
+                String code      = p.getString("product_code");
+                String desc      = p.optString("item_description", "");
                 double unitPrice = p.optDouble("stock_unit_price", p.optDouble("unit_price", 0));
-                double stockQty = p.optDouble("stock_qty", 0);
+                double stockQty  = p.optDouble("stock_qty", 0);
 
                 runOnUiThread(() -> showItemDialog(code, desc, unitPrice, stockQty));
 
             } catch (Exception e) {
                 e.printStackTrace();
-
                 runOnUiThread(() -> {
                     Toast.makeText(this, "Lookup failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     etBarcode.requestFocus();
                 });
-
             } finally {
                 if (conn != null) conn.disconnect();
             }
@@ -210,20 +205,19 @@ public class BadOrderActivity extends AppCompatActivity {
     private void showItemDialog(String code, String desc, double unitPrice, double stockQty) {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_bad_order_item, null);
 
-        TextView tvDialogCode = view.findViewById(R.id.tvDialogCode);
+        TextView tvDialogCode        = view.findViewById(R.id.tvDialogCode);
         TextView tvDialogDescription = view.findViewById(R.id.tvDialogDescription);
-        TextView tvDialogStock = view.findViewById(R.id.tvDialogStock);
-        EditText etDialogQty = view.findViewById(R.id.etDialogQty);
-        EditText etDialogReason = view.findViewById(R.id.etDialogReason);
-        TextView tvDialogSubtotal = view.findViewById(R.id.tvDialogSubtotal);
+        TextView tvDialogStock       = view.findViewById(R.id.tvDialogStock);
+        EditText etDialogQty         = view.findViewById(R.id.etDialogQty);
+        EditText etDialogReason      = view.findViewById(R.id.etDialogReason);
+        TextView tvDialogSubtotal    = view.findViewById(R.id.tvDialogSubtotal);
 
         tvDialogCode.setText(code);
         tvDialogDescription.setText(cleanItemName(desc));
-        tvDialogStock.setText("Available Stock: " + qtyFmt.format(stockQty));
+        tvDialogStock.setText("Warehouse Stock: " + qtyFmt.format(stockQty));
         tvDialogSubtotal.setText("Subtotal: ₱0.00");
 
         BadOrderItem existing = null;
-
         for (BadOrderItem item : badOrderItems) {
             if (item.getProductCode().equals(code)) {
                 existing = item;
@@ -267,8 +261,17 @@ public class BadOrderActivity extends AppCompatActivity {
                     return;
                 }
 
+                // Compare against remaining warehouse qty after items already in cart.
+                double already = 0;
+                for (BadOrderItem b : badOrderItems) {
+                    if (b.getProductCode().equals(code)) {
+                        already = b.getQuantity();
+                        break;
+                    }
+                }
+
                 if (qty > stockQty) {
-                    etDialogQty.setError("Not enough stock");
+                    etDialogQty.setError("Exceeds warehouse stock (" + qtyFmt.format(stockQty) + ")");
                     etDialogQty.requestFocus();
                     return;
                 }
@@ -280,7 +283,6 @@ public class BadOrderActivity extends AppCompatActivity {
                 }
 
                 BadOrderItem found = null;
-
                 for (BadOrderItem item : badOrderItems) {
                     if (item.getProductCode().equals(code)) {
                         found = item;
@@ -293,21 +295,11 @@ public class BadOrderActivity extends AppCompatActivity {
                     found.setRemarks(remarks);
                     found.setUnitPrice(unitPrice);
                 } else {
-                    badOrderItems.add(
-                            new BadOrderItem(
-                                    code,
-                                    desc,
-                                    qty,
-                                    unitPrice,
-                                    stockQty,
-                                    remarks
-                            )
-                    );
+                    badOrderItems.add(new BadOrderItem(code, desc, qty, unitPrice, stockQty, remarks));
                 }
 
                 adapter.notifyDataSetChanged();
                 updateSummary();
-
                 dialog.dismiss();
                 etBarcode.requestFocus();
             });
@@ -317,8 +309,7 @@ public class BadOrderActivity extends AppCompatActivity {
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setSoftInputMode(
-                    WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
-            );
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         }
 
         etDialogQty.requestFocus();
@@ -327,24 +318,25 @@ public class BadOrderActivity extends AppCompatActivity {
 
     private void saveBadOrder() {
         String boNo = etBoNumber.getText().toString().trim();
-        String supplierName = etSupplierName.getText().toString().trim();
-        int selectedStoreId = getSelectedStoreId();
+        int wid     = getSelectedWarehouseId();
+        int sid     = getSelectedSupplierId();
 
         if (boNo.isEmpty()) {
             Toast.makeText(this, "BO number is required.", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        if (selectedStoreId <= 0) {
-            Toast.makeText(this, "Please select a store.", Toast.LENGTH_SHORT).show();
+        if (wid <= 0) {
+            Toast.makeText(this, "Please select a warehouse.", Toast.LENGTH_SHORT).show();
             return;
         }
-
+        if (sid <= 0) {
+            Toast.makeText(this, "Please select a supplier.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (userId <= 0) {
             Toast.makeText(this, "Session error. Please login again.", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (badOrderItems.isEmpty()) {
             Toast.makeText(this, "Please scan at least one BO item.", Toast.LENGTH_SHORT).show();
             return;
@@ -354,21 +346,16 @@ public class BadOrderActivity extends AppCompatActivity {
                 .setTitle("Save Bad Order")
                 .setMessage("Save BO " + boNo + " with " + badOrderItems.size() + " item(s)?\n\n"
                         + "Total: ₱" + pesoFmt.format(getTotalAmount()))
-                .setPositiveButton("Save", (d, w) -> processSaveBadOrder(
-                        boNo,
-                        supplierName,
-                        selectedStoreId
-                ))
+                .setPositiveButton("Save", (d, w) -> processSaveBadOrder(boNo, wid, sid))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void processSaveBadOrder(String boNo, String supplierName, int selectedStoreId) {
+    private void processSaveBadOrder(String boNo, int warehouseId, int supplierId) {
         btnSave.setEnabled(false);
 
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 URL url = new URL(ENV.SAVE_BAD_ORDER_URL);
                 conn = (HttpURLConnection) url.openConnection();
@@ -382,13 +369,13 @@ public class BadOrderActivity extends AppCompatActivity {
 
                 JSONObject body = new JSONObject();
                 body.put("bo_no", boNo);
-                body.put("store_id", selectedStoreId);
+                body.put("warehouse_id", warehouseId);
+                body.put("store_id", storeId);
                 body.put("user_id", userId);
-                body.put("supplier_name", supplierName);
+                body.put("supplier_id", supplierId);
                 body.put("reason", "Bad Order");
 
                 JSONArray arr = new JSONArray();
-
                 for (BadOrderItem item : badOrderItems) {
                     JSONObject obj = new JSONObject();
                     obj.put("product_code", item.getProductCode());
@@ -397,7 +384,6 @@ public class BadOrderActivity extends AppCompatActivity {
                     obj.put("remarks", item.getRemarks());
                     arr.put(obj);
                 }
-
                 body.put("items", arr);
 
                 OutputStream os = conn.getOutputStream();
@@ -406,60 +392,44 @@ public class BadOrderActivity extends AppCompatActivity {
                 os.close();
 
                 int statusCode = conn.getResponseCode();
-
                 InputStream is = (statusCode >= 200 && statusCode < 300)
-                        ? conn.getInputStream()
-                        : conn.getErrorStream();
+                        ? conn.getInputStream() : conn.getErrorStream();
 
-                if (is == null) {
-                    throw new Exception("Empty server response");
-                }
+                if (is == null) throw new Exception("Empty server response");
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
-
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
                 boolean success = json.optBoolean("success", false);
-                String message = json.optString("message", "Save failed.");
+                String message  = json.optString("message", "Save failed.");
 
                 runOnUiThread(() -> {
                     btnSave.setEnabled(true);
-
-                    if (success) {
-                        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-                        finish();
-                    } else {
-                        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-                    }
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                    if (success) finish();
                 });
 
             } catch (Exception e) {
                 e.printStackTrace();
-
                 runOnUiThread(() -> {
                     btnSave.setEnabled(true);
                     Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
-
             } finally {
                 if (conn != null) conn.disconnect();
             }
         }).start();
     }
 
-    private void loadStores() {
+    private void loadWarehouses() {
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
-                URL url = new URL(ENV.ALLOWED_STORES_URL + "?user_id=" + userId);
+                URL url = new URL(ENV.ALLOWED_WAREHOUSES_URL + "?user_id=" + userId);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Accept", "application/json");
@@ -470,66 +440,93 @@ public class BadOrderActivity extends AppCompatActivity {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
-
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
-                JSONArray arr = json.optJSONArray("stores");
+                JSONArray arr = json.optJSONArray("warehouses");
+                if (arr == null) arr = new JSONArray();
 
-                if (arr == null) {
-                    arr = json.optJSONArray("data");
-                }
-
-                if (arr == null) {
-                    arr = new JSONArray();
-                }
-
-                storeMap.clear();
-                storeIds.clear();
-
+                warehouseMap.clear();
+                warehouseIds.clear();
                 List<String> names = new ArrayList<>();
 
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject s = arr.getJSONObject(i);
-
-                    int id = s.optInt("store_id");
-                    String name = s.optString("store_name", "Store " + id);
-
-                    storeIds.add(id);
-                    storeMap.put(id, name);
+                    int id = s.optInt("warehouse_id");
+                    String name = s.optString("warehouse_name", "Warehouse " + id);
+                    warehouseIds.add(id);
+                    warehouseMap.put(id, name);
                     names.add(name);
                 }
 
                 runOnUiThread(() -> {
-                    ArrayAdapter<String> sa = new ArrayAdapter<>(
-                            this,
-                            android.R.layout.simple_spinner_item,
-                            names
-                    );
+                    ArrayAdapter<String> sa = new ArrayAdapter<>(this,
+                            android.R.layout.simple_spinner_item, names);
                     sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    spinnerStore.setAdapter(sa);
-
-                    if (storeId > 0) {
-                        for (int i = 0; i < storeIds.size(); i++) {
-                            if (storeIds.get(i) == storeId) {
-                                spinnerStore.setSelection(i);
-                                break;
-                            }
-                        }
-                    }
+                    spinnerWarehouse.setAdapter(sa);
                 });
 
             } catch (Exception e) {
                 e.printStackTrace();
-
                 runOnUiThread(() ->
-                        Toast.makeText(this, "Failed to load stores.", Toast.LENGTH_SHORT).show()
-                );
+                        Toast.makeText(this, "Failed to load warehouses.", Toast.LENGTH_SHORT).show());
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        }).start();
+    }
 
+    private void loadSuppliers() {
+        new Thread(() -> {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(ENV.SUPPLIERS_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(15000);
+
+                InputStream is = conn.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                StringBuilder res = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) res.append(line);
+                reader.close();
+
+                JSONObject json = new JSONObject(res.toString());
+                JSONArray arr = json.optJSONArray("suppliers");
+                if (arr == null) arr = new JSONArray();
+
+                supplierMap.clear();
+                supplierIds.clear();
+                List<String> names = new ArrayList<>();
+
+                // Add a placeholder at position 0 so the spinner has a "select supplier" state.
+                supplierIds.add(0);
+                names.add("-- Select Supplier --");
+
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject s = arr.getJSONObject(i);
+                    int id = s.optInt("supplier_id");
+                    String name = s.optString("supplier_name", "Supplier " + id);
+                    supplierIds.add(id);
+                    supplierMap.put(id, name);
+                    names.add(name);
+                }
+
+                runOnUiThread(() -> {
+                    ArrayAdapter<String> sa = new ArrayAdapter<>(this,
+                            android.R.layout.simple_spinner_item, names);
+                    sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spinnerSupplier.setAdapter(sa);
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Failed to load suppliers.", Toast.LENGTH_SHORT).show());
             } finally {
                 if (conn != null) conn.disconnect();
             }
@@ -539,7 +536,6 @@ public class BadOrderActivity extends AppCompatActivity {
     private void generateBoNumber() {
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 URL url = new URL(ENV.GENERATE_BO_URL);
                 conn = (HttpURLConnection) url.openConnection();
@@ -552,69 +548,56 @@ public class BadOrderActivity extends AppCompatActivity {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
-
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
                 String boNo = json.optString("bo_no", "");
-
                 runOnUiThread(() -> etBoNumber.setText(boNo));
 
             } catch (Exception e) {
                 e.printStackTrace();
-
                 runOnUiThread(() ->
-                        Toast.makeText(this, "Failed to generate BO number.", Toast.LENGTH_SHORT).show()
-                );
-
+                        Toast.makeText(this, "Failed to generate BO number.", Toast.LENGTH_SHORT).show());
             } finally {
                 if (conn != null) conn.disconnect();
             }
         }).start();
     }
 
-    private int getSelectedStoreId() {
-        if (storeIds.isEmpty()) return storeId;
+    private int getSelectedWarehouseId() {
+        if (warehouseIds.isEmpty()) return -1;
+        int pos = spinnerWarehouse.getSelectedItemPosition();
+        if (pos < 0 || pos >= warehouseIds.size()) return -1;
+        return warehouseIds.get(pos);
+    }
 
-        int pos = spinnerStore.getSelectedItemPosition();
-
-        if (pos < 0 || pos >= storeIds.size()) return storeId;
-
-        return storeIds.get(pos);
+    private int getSelectedSupplierId() {
+        if (supplierIds.isEmpty()) return -1;
+        int pos = spinnerSupplier.getSelectedItemPosition();
+        if (pos < 0 || pos >= supplierIds.size()) return -1;
+        return supplierIds.get(pos);
     }
 
     private double getTotalAmount() {
         double total = 0;
-
-        for (BadOrderItem item : badOrderItems) {
-            total += item.getSubtotal();
-        }
-
+        for (BadOrderItem item : badOrderItems) total += item.getSubtotal();
         return total;
     }
 
     private void updateSummary() {
-        double total = 0;
-        double qty = 0;
-
+        double total = 0, qty = 0;
         for (BadOrderItem item : badOrderItems) {
             total += item.getSubtotal();
-            qty += item.getQuantity();
+            qty   += item.getQuantity();
         }
-
         tvItemCount.setText("Items: " + badOrderItems.size() + " | Qty: " + qtyFmt.format(qty));
         tvTotalAmount.setText("₱" + pesoFmt.format(total));
     }
 
     private String resolveProductCode(String scanned) {
         if (scanned == null) return "";
-
-        return scanned.trim()
-                .replaceAll("[^0-9A-Za-z]", "");
+        return scanned.trim().replaceAll("[^0-9A-Za-z]", "");
     }
 
     private double parseDouble(String value) {
@@ -629,42 +612,28 @@ public class BadOrderActivity extends AppCompatActivity {
 
     private String cleanItemName(String value) {
         if (value == null) return "";
-
         String text = value
-                .replace("️", "")
-                .replace("–", "-")
-                .replace("—", "-")
-                .replaceAll("\\s+", " ")
-                .trim();
-
+                .replace("\uFE0F", "")
+                .replace("–", "-").replace("—", "-")
+                .replaceAll("\\s+", " ").trim();
+        text = text.replaceFirst("\\s*\\|.*$", "").trim();
         text = text.replaceFirst("\\s*-\\s+.*$", "").trim();
-
         text = text.replaceFirst("(?i)\\s+!\\s*.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+is the\\s+.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+perfect for\\s+.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+great for\\s+.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+ideal for\\s+.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+by\\s+.*$", "").trim();
-
         return text.replaceAll("\\s+", " ").trim();
     }
 
     private static class SimpleWatcher implements android.text.TextWatcher {
         private final Runnable runnable;
-
-        SimpleWatcher(Runnable runnable) {
-            this.runnable = runnable;
-        }
-
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
+        SimpleWatcher(Runnable runnable) { this.runnable = runnable; }
+        @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
             if (runnable != null) runnable.run();
         }
-
-        @Override
-        public void afterTextChanged(android.text.Editable s) {}
+        @Override public void afterTextChanged(android.text.Editable s) {}
     }
 }

@@ -1,5 +1,6 @@
 package com.nssi.salangikopu.Activity;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -43,7 +44,8 @@ public class StockTransferActivity extends AppCompatActivity {
     private LinearLayout layoutWarehouse;
     private ListView listTransferItems;
     private TextView tvTransferNo, tvStoreName, tvStoreAddress, tvWarehouseDetected,
-            tvItemCount, tvTotalAmount;
+            tvItemCount, tvTotalAmount, tvStoreSideLabel, lblWarehouse, lblStore,
+            btnDirTransfer, btnDirReturn;
 
     private StockTransferAdapter adapter;
     private final List<StockTransferItem> transferItems = new ArrayList<>();
@@ -60,6 +62,9 @@ public class StockTransferActivity extends AppCompatActivity {
     private int storeId = -1;
 
     private String transferNo = "";
+
+    // NEW: direction state
+    private boolean isReturnMode = false;  // false = WAREHOUSE_TO_STORE, true = STORE_TO_WAREHOUSE
 
     private long lastScanTime = 0;
     private static final long DEBOUNCE_MS = 100;
@@ -85,10 +90,27 @@ public class StockTransferActivity extends AppCompatActivity {
         tvItemCount = findViewById(R.id.tvItemCount);
         tvTotalAmount = findViewById(R.id.tvTotalAmount);
 
+        // NEW views
+        tvStoreSideLabel = findViewById(R.id.tvStoreSideLabel);
+        lblWarehouse = findViewById(R.id.lblWarehouse);
+        lblStore = findViewById(R.id.lblStore);
+        btnDirTransfer = findViewById(R.id.btnDirTransfer);
+        btnDirReturn = findViewById(R.id.btnDirReturn);
+
         userId = getIntent().getIntExtra("user_id", -1);
 
-        adapter = new StockTransferAdapter(this, transferItems, this::updateSummary);
+        adapter = new StockTransferAdapter(
+                this,
+                transferItems,
+                this::updateSummary,
+                () -> etBarcode.requestFocus()
+        );
         listTransferItems.setAdapter(adapter);
+
+        // Direction toggle
+        btnDirTransfer.setOnClickListener(v -> setDirection(false));
+        btnDirReturn.setOnClickListener(v -> setDirection(true));
+        setDirection(false); // default
 
         generateTransferNo();
         loadAllowedWarehouses();
@@ -97,7 +119,7 @@ public class StockTransferActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> {
             if (!transferItems.isEmpty()) {
                 showStyledDialog(
-                        "Discard Transfer",
+                        "Discard " + (isReturnMode ? "Return" : "Transfer"),
                         "You have unsaved changes.",
                         "You have unsaved items. Are you sure you want to go back?",
                         "Items:",
@@ -131,6 +153,80 @@ public class StockTransferActivity extends AppCompatActivity {
         etBarcode.requestFocus();
     }
 
+    /**
+     * Switches between forward transfer and return-to-warehouse mode.
+     * Clears scanned items because the source side changes, so the stock
+     * info in the cart wouldn't apply anymore.
+     */
+    private void setDirection(boolean returnMode) {
+        if (this.isReturnMode == returnMode && !transferItems.isEmpty()) {
+            // No-op if user re-taps the same button
+            return;
+        }
+
+        if (!transferItems.isEmpty()) {
+            showStyledDialog(
+                    "Switch Direction",
+                    "Changing direction will clear scanned items.",
+                    "You have " + transferItems.size() + " item(s) in the list. Switch anyway?",
+                    null,
+                    null,
+                    "Switch",
+                    "Cancel",
+                    () -> applyDirection(returnMode),
+                    () -> etBarcode.requestFocus()
+            );
+            return;
+        }
+
+        applyDirection(returnMode);
+    }
+
+    private void applyDirection(boolean returnMode) {
+        this.isReturnMode = returnMode;
+
+        // Clear cart on direction change so stock figures stay correct
+        transferItems.clear();
+        adapter.notifyDataSetChanged();
+        updateSummary();
+
+        if (returnMode) {
+            btnDirTransfer.setBackgroundColor(Color.parseColor("#FFFFFF"));
+            btnDirTransfer.setTextColor(Color.parseColor("#2E3192"));
+            btnDirReturn.setBackgroundColor(Color.parseColor("#F5333F"));   // red = returning
+            btnDirReturn.setTextColor(Color.parseColor("#FFFFFF"));
+
+            tvStoreSideLabel.setText("SOURCE STORE");
+            lblWarehouse.setText("Destination Warehouse");
+            lblStore.setText("Source Store");
+
+            // Tint the Save button red so the user feels the mode change
+            btnSave.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(Color.parseColor("#F5333F")));
+            btnSave.setText("Return");
+        } else {
+            btnDirTransfer.setBackgroundColor(Color.parseColor("#2E3192"));
+            btnDirTransfer.setTextColor(Color.parseColor("#FFFFFF"));
+            btnDirReturn.setBackgroundColor(Color.parseColor("#FFFFFF"));
+            btnDirReturn.setTextColor(Color.parseColor("#2E3192"));
+
+            tvStoreSideLabel.setText("DESTINATION STORE");
+            lblWarehouse.setText("Source Warehouse");
+            lblStore.setText("Destination Store");
+
+            btnSave.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(Color.parseColor("#00A651")));
+            btnSave.setText("Save");
+        }
+
+        // Refresh the "Source: …" / "Destination: …" status line
+        updateDetectedLabel();
+
+        // Regenerate transfer number so prefix matches (ST- vs RT-)
+        generateTransferNo();
+
+        etBarcode.requestFocus();
+    }
     private AlertDialog showStyledDialog(
             String title,
             String subtitle,
@@ -199,7 +295,6 @@ public class StockTransferActivity extends AppCompatActivity {
     private void loadAllowedWarehouses() {
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 URL url = new URL(ENV.ALLOWED_WAREHOUSES_URL + "?user_id=" + userId);
                 conn = (HttpURLConnection) url.openConnection();
@@ -210,12 +305,9 @@ public class StockTransferActivity extends AppCompatActivity {
 
                 InputStream is = conn.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
                 StringBuilder res = new StringBuilder();
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
@@ -242,7 +334,7 @@ public class StockTransferActivity extends AppCompatActivity {
                     if (warehouseIds.size() == 1) {
                         selectedWarehouseId = warehouseIds.get(0);
                         layoutWarehouse.setVisibility(View.GONE);
-                        tvWarehouseDetected.setText("Source: " + warehouseNames.get(0));
+                        updateDetectedLabel();
                     } else {
                         layoutWarehouse.setVisibility(View.VISIBLE);
 
@@ -255,18 +347,17 @@ public class StockTransferActivity extends AppCompatActivity {
                         spinnerWarehouse.setAdapter(adapter);
 
                         selectedWarehouseId = warehouseIds.get(0);
-                        tvWarehouseDetected.setText("Source: " + warehouseNames.get(0));
+                        updateDetectedLabel();
 
                         spinnerWarehouse.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                             @Override
                             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                                 selectedWarehouseId = warehouseIds.get(position);
-                                tvWarehouseDetected.setText("Source: " + warehouseNames.get(position));
+                                updateDetectedLabel();
                             }
 
                             @Override
-                            public void onNothingSelected(AdapterView<?> parent) {
-                            }
+                            public void onNothingSelected(AdapterView<?> parent) {}
                         });
                     }
                 });
@@ -282,10 +373,19 @@ public class StockTransferActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void updateDetectedLabel() {
+        if (selectedWarehouseId <= 0) return;
+        int idx = warehouseIds.indexOf(selectedWarehouseId);
+        if (idx < 0) return;
+        String name = warehouseNames.get(idx);
+        tvWarehouseDetected.setText(
+                isReturnMode ? ("Destination: " + name) : ("Source: " + name)
+        );
+    }
+
     private void loadAllowedStores() {
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 URL url = new URL(ENV.ALLOWED_STORES_URL + "?user_id=" + userId);
                 conn = (HttpURLConnection) url.openConnection();
@@ -296,12 +396,9 @@ public class StockTransferActivity extends AppCompatActivity {
 
                 InputStream is = conn.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
                 StringBuilder res = new StringBuilder();
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
@@ -323,7 +420,7 @@ public class StockTransferActivity extends AppCompatActivity {
                         storeId = -1;
                         tvStoreName.setText("—");
                         tvStoreAddress.setText("No store available");
-                        Toast.makeText(this, "No destination store available.", Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "No store available.", Toast.LENGTH_LONG).show();
                         return;
                     }
 
@@ -360,8 +457,7 @@ public class StockTransferActivity extends AppCompatActivity {
                         }
 
                         @Override
-                        public void onNothingSelected(AdapterView<?> parent) {
-                        }
+                        public void onNothingSelected(AdapterView<?> parent) {}
                     });
                 });
 
@@ -378,11 +474,8 @@ public class StockTransferActivity extends AppCompatActivity {
 
     private String resolveProductCode(String scanned) {
         if (scanned == null) return "";
-
-        return scanned.trim()
-                .replaceAll("[^0-9A-Za-z]", "");
+        return scanned.trim().replaceAll("[^0-9A-Za-z]", "");
     }
-
 
     private void handleScan() {
         long now = System.currentTimeMillis();
@@ -404,9 +497,10 @@ public class StockTransferActivity extends AppCompatActivity {
     private void generateTransferNo() {
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
-                URL url = new URL(ENV.GENERATE_TRANSFER_URL);
+                // Tell the server which prefix to use
+                URL url = new URL(ENV.GENERATE_TRANSFER_URL
+                        + "?direction=" + (isReturnMode ? "return" : "transfer"));
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Accept", "application/json");
@@ -415,12 +509,9 @@ public class StockTransferActivity extends AppCompatActivity {
 
                 InputStream is = conn.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-
                 StringBuilder res = new StringBuilder();
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
@@ -442,18 +533,25 @@ public class StockTransferActivity extends AppCompatActivity {
     private void lookupProduct(String productCode) {
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 if (selectedWarehouseId <= 0) {
                     runOnUiThread(() ->
-                            Toast.makeText(this, "Please select a source warehouse first.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Please select a warehouse.", Toast.LENGTH_SHORT).show()
+                    );
+                    return;
+                }
+                if (isReturnMode && storeId <= 0) {
+                    runOnUiThread(() ->
+                            Toast.makeText(this, "Please select a source store.", Toast.LENGTH_SHORT).show()
                     );
                     return;
                 }
 
                 String query = "?code=" + URLEncoder.encode(productCode, "UTF-8")
                         + "&user_id=" + userId
-                        + "&warehouse_id=" + selectedWarehouseId;
+                        + "&warehouse_id=" + selectedWarehouseId
+                        + "&store_id=" + storeId
+                        + "&direction=" + (isReturnMode ? "return" : "transfer");
 
                 URL url = new URL(ENV.TRANSFER_LOOKUP_URL + query);
                 conn = (HttpURLConnection) url.openConnection();
@@ -472,9 +570,7 @@ public class StockTransferActivity extends AppCompatActivity {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
@@ -548,29 +644,46 @@ public class StockTransferActivity extends AppCompatActivity {
 
     private void saveTransfer() {
         if (selectedWarehouseId <= 0) {
-            Toast.makeText(this, "Please select a source warehouse.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please select a warehouse.", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (storeId <= 0) {
-            Toast.makeText(this, "Please select a destination store.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please select a store.", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (transferItems.isEmpty()) {
             Toast.makeText(this, "Please scan at least one item.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         double total = 0;
-        for (StockTransferItem item : transferItems) {
-            total += item.getSubtotal();
-        }
+        for (StockTransferItem item : transferItems) total += item.getSubtotal();
+
+        // Resolve names for the confirmation
+        String warehouseName = "—";
+        int wIdx = warehouseIds.indexOf(selectedWarehouseId);
+        if (wIdx >= 0) warehouseName = warehouseNames.get(wIdx);
+
+        String storeName = "—";
+        int sIdx = storeIds.indexOf(storeId);
+        if (sIdx >= 0) storeName = storeNames.get(sIdx);
+
+        String title = isReturnMode ? "Confirm Return" : "Confirm Transfer";
+
+        // Always show as "Source → Destination" so the direction is unambiguous
+        String flow = isReturnMode
+                ? (storeName + "  →  " + warehouseName)
+                : (warehouseName + "  →  " + storeName);
+
+        String msg = (isReturnMode
+                ? "Return stock from store back to warehouse:\n\n"
+                : "Transfer stock from warehouse to store:\n\n")
+                + flow;
 
         showStyledDialog(
-                "Confirm Transfer",
-                "Please review before saving.",
-                "Save transfer " + transferNo + " from warehouse to selected store?",
+                title,
+                transferNo,
+                msg,
                 "Total Amount:",
                 "₱" + fmt.format(total),
                 "Confirm",
@@ -579,11 +692,9 @@ public class StockTransferActivity extends AppCompatActivity {
                 () -> etBarcode.requestFocus()
         );
     }
-
     private void performSaveTransfer() {
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 URL url = new URL(ENV.SAVE_TRANSFER_URL);
                 conn = (HttpURLConnection) url.openConnection();
@@ -599,9 +710,9 @@ public class StockTransferActivity extends AppCompatActivity {
                 body.put("warehouse_id", selectedWarehouseId);
                 body.put("store_id", storeId);
                 body.put("user_id", userId);
+                body.put("direction", isReturnMode ? "STORE_TO_WAREHOUSE" : "WAREHOUSE_TO_STORE");
 
                 JSONArray itemsArr = new JSONArray();
-
                 for (StockTransferItem item : transferItems) {
                     JSONObject obj = new JSONObject();
                     obj.put("product_code", item.getProductCode());
@@ -609,7 +720,6 @@ public class StockTransferActivity extends AppCompatActivity {
                     obj.put("unit_price", item.getUnitPrice());
                     itemsArr.put(obj);
                 }
-
                 body.put("items", itemsArr);
 
                 OutputStream os = conn.getOutputStream();
@@ -627,22 +737,24 @@ public class StockTransferActivity extends AppCompatActivity {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
                 boolean success = json.optBoolean("success", false);
-                String message = json.optString("message", success ? "Transfer saved!" : "Transfer failed.");
+                String message = json.optString("message",
+                        success ? "Saved!" : "Save failed.");
 
                 runOnUiThread(() -> {
+                    String savedTitle = isReturnMode ? "Return Saved" : "Transfer Saved";
+                    String failedTitle = isReturnMode ? "Return Failed" : "Transfer Failed";
+
                     if (success) {
                         showStyledDialog(
-                                "Transfer Saved",
-                                "The stock transfer was recorded successfully.",
+                                savedTitle,
+                                "The record was saved successfully.",
                                 message,
-                                "Transfer No:",
+                                isReturnMode ? "Return No:" : "Transfer No:",
                                 transferNo,
                                 "OK",
                                 "Close",
@@ -651,10 +763,10 @@ public class StockTransferActivity extends AppCompatActivity {
                         );
                     } else {
                         showStyledDialog(
-                                "Transfer Failed",
-                                "The stock transfer could not be saved.",
+                                failedTitle,
+                                "The record could not be saved.",
                                 message,
-                                "Transfer No:",
+                                isReturnMode ? "Return No:" : "Transfer No:",
                                 transferNo,
                                 "OK",
                                 "Close",
@@ -671,7 +783,7 @@ public class StockTransferActivity extends AppCompatActivity {
                                 "Save Failed",
                                 "An error occurred while saving.",
                                 e.getMessage(),
-                                "Transfer No:",
+                                isReturnMode ? "Return No:" : "Transfer No:",
                                 transferNo,
                                 "OK",
                                 "Close",
@@ -687,9 +799,7 @@ public class StockTransferActivity extends AppCompatActivity {
 
     private void updateSummary() {
         double total = 0;
-        for (StockTransferItem item : transferItems) {
-            total += item.getSubtotal();
-        }
+        for (StockTransferItem item : transferItems) total += item.getSubtotal();
         tvItemCount.setText("Items: " + transferItems.size());
         tvTotalAmount.setText("₱" + fmt.format(total));
     }

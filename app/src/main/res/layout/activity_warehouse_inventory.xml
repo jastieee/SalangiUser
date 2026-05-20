@@ -27,19 +27,44 @@
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvWarehouseName"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:paddingStart="10dp"
             android:paddingEnd="6dp"
             android:text="Warehouse Inventory"
             android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:gravity="center_vertical"
-            android:singleLine="true"
-            android:ellipsize="end" />
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- WAREHOUSE PICKER -->
+    <LinearLayout
+        android:id="@+id/layoutWarehousePicker"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="#EEF1FF"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingEnd="8dp"
+            android:text="Warehouse:"
+            android:textColor="#2E3192"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerWarehouse"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:background="@drawable/input_border"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
     </LinearLayout>
 
     <!-- HIDDEN SCAN INPUT -->

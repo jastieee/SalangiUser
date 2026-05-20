@@ -5,6 +5,7 @@
     android:orientation="vertical"
     android:background="#F4F6F8">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="50dp"
@@ -44,6 +45,7 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Form fields -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -51,6 +53,7 @@
         android:padding="8dp"
         android:background="#FFFFFF">
 
+        <!-- Row 1: Supplier -->
         <AutoCompleteTextView
             android:id="@+id/actSupplier"
             android:layout_width="match_parent"
@@ -60,49 +63,77 @@
             android:paddingEnd="8dp"
             android:singleLine="true"
             android:textSize="10sp"
+            android:imeOptions="actionNext"
             android:background="@android:drawable/edit_text" />
 
-        <EditText
-            android:id="@+id/etPoNumber"
+        <!-- Row 2: PO Number + Auto checkbox side by side -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_marginTop="6dp"
-            android:hint="PO Number (optional)"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:singleLine="true"
-            android:textSize="10sp" />
-
-        <CheckBox
-            android:id="@+id/cbAutoPoNumber"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Auto Generate PO"
-            android:textSize="10sp" />
-
-        <EditText
-            android:id="@+id/etInvoiceNo"
-            android:layout_width="match_parent"
-            android:layout_height="36dp"
+            android:orientation="horizontal"
             android:layout_marginTop="6dp"
-            android:hint="Sales Invoice No. (optional)"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:singleLine="true"
-            android:textSize="10sp" />
+            android:gravity="center_vertical">
 
-        <EditText
-            android:id="@+id/etDrNo"
+            <EditText
+                android:id="@+id/etPoNumber"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:hint="PO Number (optional)"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:imeOptions="actionNext"
+                android:nextFocusForward="@id/etInvoiceNo" />
+
+            <CheckBox
+                android:id="@+id/cbAutoPoNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Auto PO"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- Row 3: SI and DR side by side -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_marginTop="6dp"
-            android:hint="DR Number (optional)"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:singleLine="true"
-            android:textSize="10sp" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="6dp">
 
+            <EditText
+                android:id="@+id/etInvoiceNo"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:hint="Sales Invoice No."
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:imeOptions="actionDone"
+                android:nextFocusForward="@id/etDrNo" />
+
+            <View
+                android:layout_width="6dp"
+                android:layout_height="match_parent" />
+
+            <EditText
+                android:id="@+id/etDrNo"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:hint="DR Number"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:singleLine="true"
+                android:textSize="10sp"
+                android:imeOptions="actionDone" />
+        </LinearLayout>
+
+        <!-- Row 4: Warehouse -->
         <Spinner
             android:id="@+id/spinnerWarehouse"
             android:layout_width="match_parent"
@@ -111,6 +142,7 @@
 
     </LinearLayout>
 
+    <!-- Hidden barcode scanner field -->
     <EditText
         android:id="@+id/etBarcode"
         android:layout_width="1dp"
@@ -131,6 +163,7 @@
         android:divider="@android:color/transparent"
         android:dividerHeight="4dp" />
 
+    <!-- Footer -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"

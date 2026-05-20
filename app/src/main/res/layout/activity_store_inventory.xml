@@ -27,7 +27,6 @@
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvStoreName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -40,6 +39,35 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- STORE PICKER -->
+    <LinearLayout
+        android:id="@+id/layoutStorePicker"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="#EEF1FF"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingEnd="8dp"
+            android:text="Store:"
+            android:textColor="#2E3192"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerStore"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:background="@drawable/input_border"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+    </LinearLayout>
     <!-- HIDDEN SCAN INPUT -->
     <EditText
         android:id="@+id/etSearch"
@@ -82,35 +110,6 @@
             android:textColor="#666666"
             android:textSize="11sp" />
 
-    </LinearLayout>
-
-    <!-- INVENTORY DATE -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:background="#EEF1FF"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingEnd="8dp"
-            android:text="Inventory Date:"
-            android:textColor="#2E3192"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <Spinner
-            android:id="@+id/spinnerSnapshot"
-            android:layout_width="0dp"
-            android:layout_height="32dp"
-            android:layout_weight="1"
-            android:background="@drawable/input_border"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp" />
     </LinearLayout>
 
     <!-- TABLE HEADER -->

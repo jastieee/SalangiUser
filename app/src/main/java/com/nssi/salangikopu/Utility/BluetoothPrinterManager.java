@@ -20,15 +20,18 @@ import java.util.UUID;
 public class BluetoothPrinterManager {
 
     private static final String TAG             = "BTPrinter";
-    private static final String PREF_NAME       = "salangikopu";
+    private static final String PREF_NAME       = "threeetoys_prefs";
     private static final String PREF_BT_ADDRESS = "bt_printer_address";
     private static final String PREF_BT_NAME    = "bt_printer_name";
 
     private static final String TIKTOK_URL =
-            "https://www.tiktok.com/@salangikopuvarietystore?_r=1&_t=ZS-951ahylByDc";
+            "https://www.tiktok.com/@threeestoysandcandystore?_r=1&_t=ZS-951afOU22fE";
 
     private static final String FACEBOOK_URL =
-            "https://www.facebook.com/share/1Qemk5p8Ub/";
+            "https://www.facebook.com/share/14cDAAu4nY3/";
+
+    private static final String CONTACT_URL =
+            "https://www.3ecandy.com/contact/";
 
     private static final UUID SPP_UUID =
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -43,6 +46,9 @@ public class BluetoothPrinterManager {
     private static final byte[] BOLD_ON        = {0x1B, 0x45, 0x01};
     private static final byte[] BOLD_OFF       = {0x1B, 0x45, 0x00};
     private static final byte[] FONT_NORMAL    = {0x1B, 0x21, 0x00};
+    // Condensed font: smaller width (font B)
+    private static final byte[] FONT_SMALL     = {0x1B, 0x4D, 0x01};  // ESC M 1 = Font B (smaller)
+    private static final byte[] FONT_STANDARD  = {0x1B, 0x4D, 0x00};  // ESC M 0 = Font A (normal)
     private static final byte[] FONT_DOUBLE_HT = {0x1B, 0x21, 0x10};
     private static final byte[] FONT_DOUBLE_WH = {0x1B, 0x21, 0x30};
     private static final byte[] LINE_FEED      = {0x0A};
@@ -448,22 +454,14 @@ public class BluetoothPrinterManager {
     }
 
     private static String formatReceiptItemLine(int qty, String unitPrice, String subtotal, int width) {
-        String qtyStr = String.valueOf(qty);
-
-        String leftPart = String.format(Locale.US,
-                "%10s%6s%10s",
-                qtyStr, "x", unitPrice
-        );
-
-        int subtotalWidth = 10;
-        int spaces = width - leftPart.length() - subtotalWidth;
+        String left = qty + " x " + unitPrice;
+        int spaces = width - left.length() - subtotal.length();
         if (spaces < 1) spaces = 1;
 
         StringBuilder sb = new StringBuilder();
-        sb.append(leftPart);
+        sb.append(left);
         for (int i = 0; i < spaces; i++) sb.append(' ');
-        sb.append(padLeft(subtotal, subtotalWidth));
-
+        sb.append(subtotal);
         return sb.toString();
     }
 
@@ -497,27 +495,22 @@ public class BluetoothPrinterManager {
         b.write(LogoEscPos.getHeader());
         b.write(LogoEscPos.getData());
 
-        // removed large top feed
-
         // =========================
         // HEADER
         // =========================
         b.write(ALIGN_CENTER);
 
         b.write(BOLD_ON);
-        writeLine(b, "SALANGI KO PU");
-//        writeLine(b, "VARIETY STORE");
+        writeLine(b, "THREE E'S TOYS &");
+        writeLine(b, "CANDY STORE");
         b.write(BOLD_OFF);
 
-        writeLine(b, "\"Your Daily Needs Store\"");;
+        writeLine(b, "\"All Your Daily Needs, All in One Place.\"");
 
-        b.write(new byte[]{0x1B, 0x64, 0x01});
-
+        // no extra feed — go straight to date/cashier/trx
         writeLine(b, "Date: " + data.dateTime);
         writeLine(b, "Cashier: " + data.cashierName);
         writeLine(b, "TRX#: " + data.transactionNo);
-
-        b.write(new byte[]{0x1B, 0x64, 0x01});
 
         // =========================
         // DIVIDER
@@ -534,12 +527,13 @@ public class BluetoothPrinterManager {
                     cleanItemName(item.description)
             ).trim();
 
-            List<String> nameLines = wrapText(name, 28);
-
+            // wrap to full WIDTH — no more cut-off at 28
+            List<String> nameLines = wrapText(name, WIDTH);
             for (String line : nameLines) {
                 writeLine(b, line);
             }
 
+            // qty x price on left, subtotal flush right, spans full WIDTH
             writeLine(
                     b,
                     formatReceiptItemLine(
@@ -549,9 +543,7 @@ public class BluetoothPrinterManager {
                             WIDTH
                     )
             );
-
-            // smaller spacing per item
-            b.write(new byte[]{0x1B, 0x64, 0x01});
+            // no extra feed between items
         }
 
         // =========================
@@ -563,7 +555,6 @@ public class BluetoothPrinterManager {
         // TOTAL
         // =========================
         b.write(BOLD_ON);
-
         writeLine(
                 b,
                 formatTotalAmountLine(
@@ -572,29 +563,19 @@ public class BluetoothPrinterManager {
                         WIDTH
                 )
         );
-
         b.write(BOLD_OFF);
-
-        b.write(new byte[]{0x1B, 0x64, 0x01});
 
         // =========================
         // DIVIDER
         // =========================
         writeLine(b, repeat("-", WIDTH));
 
-        b.write(new byte[]{0x1B, 0x64, 0x01});
-
         // =========================
         // FOOTER
         // =========================
         b.write(ALIGN_CENTER);
-
-        writeLine(
-                b,
-                "Thank you for supporting our local jobs! See you again!"
-        );
-
-        b.write(new byte[]{0x1B, 0x64, 0x01});
+        writeLine(b, "Thank you for supporting our local jobs!");
+        writeLine(b, "See you again!");
 
         writeLine(b, "NOTE");
         writeLine(b, "This is not an official receipt");
@@ -603,11 +584,7 @@ public class BluetoothPrinterManager {
         writeLine(b, "Please request the official");
         writeLine(b, "invoice from the merchant.");
 
-        b.write(new byte[]{0x1B, 0x64, 0x01});
-
         writeLine(b, "FOLLOW US ON SOCIAL MEDIA");
-
-        b.write(new byte[]{0x1B, 0x64, 0x01});
 
         // =========================
         // QR CODES
@@ -619,9 +596,11 @@ public class BluetoothPrinterManager {
         );
 
         // =========================
-        // VERY SMALL BOTTOM MARGIN
+        // CONTACT LINE (below QR codes)
         // =========================
-        b.write(new byte[]{0x1B, 0x64, 0x01});
+        b.write(ALIGN_CENTER);
+        writeLine(b, "Need assistance or have a question?");
+        writeLine(b, "Visit " + CONTACT_URL);
 
         // =========================
         // CUT
@@ -878,6 +857,7 @@ public class BluetoothPrinterManager {
 
         return text;
     }
+
     private static String toProperCase(String text) {
         if (text == null || text.isEmpty()) return "";
 

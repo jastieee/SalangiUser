@@ -80,19 +80,14 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <EditText
-            android:id="@+id/etSupplierName"
+        <Spinner
+            android:id="@+id/spinnerSupplier"
             android:layout_width="match_parent"
             android:layout_height="36dp"
-            android:layout_marginTop="6dp"
-            android:hint="Supplier Name optional"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:singleLine="true"
-            android:textSize="10sp" />
+            android:layout_marginTop="6dp" />
 
         <Spinner
-            android:id="@+id/spinnerStore"
+            android:id="@+id/spinnerWarehouse"
             android:layout_width="match_parent"
             android:layout_height="36dp"
             android:layout_marginTop="6dp" />

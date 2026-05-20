@@ -23,13 +23,20 @@ public class TransferConfirmationAdapter extends ArrayAdapter<TransferConfirmati
         void onConfirm(TransferConfirmationItem item);
     }
 
-    private final OnConfirmClickListener listener;
+    public interface OnDenyClickListener {
+        void onDeny(TransferConfirmationItem item);
+    }
+
+    private final OnConfirmClickListener confirmListener;
+    private final OnDenyClickListener denyListener;
 
     public TransferConfirmationAdapter(Context context,
                                        List<TransferConfirmationItem> items,
-                                       OnConfirmClickListener listener) {
+                                       OnConfirmClickListener confirmListener,
+                                       OnDenyClickListener denyListener) {
         super(context, 0, items);
-        this.listener = listener;
+        this.confirmListener = confirmListener;
+        this.denyListener = denyListener;
     }
 
     @NonNull
@@ -49,6 +56,7 @@ public class TransferConfirmationAdapter extends ArrayAdapter<TransferConfirmati
             holder.tvItemCount = convertView.findViewById(R.id.tvItemCount);
             holder.tvStatus = convertView.findViewById(R.id.tvStatus);
             holder.btnConfirm = convertView.findViewById(R.id.btnConfirm);
+            holder.btnDeny = convertView.findViewById(R.id.btnDeny);
 
             convertView.setTag(holder);
         } else {
@@ -75,10 +83,13 @@ public class TransferConfirmationAdapter extends ArrayAdapter<TransferConfirmati
 
         switch (status) {
             case "PENDING":
-                holder.tvStatus.setTextColor(Color.parseColor("#FFA000"));
+                holder.tvStatus.setTextColor(Color.parseColor("#FFA000")); // orange
                 break;
             case "TRANSFER COMPLETE":
-                holder.tvStatus.setTextColor(Color.parseColor("#2E7D32"));
+                holder.tvStatus.setTextColor(Color.parseColor("#2E7D32")); // green
+                break;
+            case "DENIED":
+                holder.tvStatus.setTextColor(Color.parseColor("#C62828")); // red
                 break;
             default:
                 holder.tvStatus.setTextColor(Color.parseColor("#555555"));
@@ -86,16 +97,21 @@ public class TransferConfirmationAdapter extends ArrayAdapter<TransferConfirmati
         }
 
         holder.btnConfirm.setOnClickListener(null);
+        holder.btnDeny.setOnClickListener(null);
 
         if ("PENDING".equals(status)) {
             holder.btnConfirm.setVisibility(View.VISIBLE);
+            holder.btnDeny.setVisibility(View.VISIBLE);
+
             holder.btnConfirm.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onConfirm(item);
-                }
+                if (confirmListener != null) confirmListener.onConfirm(item);
+            });
+            holder.btnDeny.setOnClickListener(v -> {
+                if (denyListener != null) denyListener.onDeny(item);
             });
         } else {
             holder.btnConfirm.setVisibility(View.GONE);
+            holder.btnDeny.setVisibility(View.GONE);
         }
 
         convertView.setBackgroundColor(
@@ -117,5 +133,6 @@ public class TransferConfirmationAdapter extends ArrayAdapter<TransferConfirmati
         TextView tvItemCount;
         TextView tvStatus;
         Button btnConfirm;
+        Button btnDeny;
     }
 }

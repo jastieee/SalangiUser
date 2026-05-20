@@ -23,14 +23,9 @@ import com.nssi.salangikopu.Utility.BluetoothPrinterManager;
 import com.nssi.salangikopu.Utility.PrinterSelectDialog;
 import com.nssi.salangikopu.Utility.ReceiptData;
 
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,8 +33,11 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class RefundItemsActivity extends AppCompatActivity {
 
@@ -95,7 +93,6 @@ public class RefundItemsActivity extends AppCompatActivity {
             if (checkedId == R.id.rbFullRefund) {
                 adapter.setPartialMode(false);
                 setFullRefundQty();
-                showRefundActionModal();
             } else if (checkedId == R.id.rbPartialRefund) {
                 adapter.setPartialMode(true);
 
@@ -144,21 +141,18 @@ public class RefundItemsActivity extends AppCompatActivity {
             if (isFull) {
                 adapter.setPartialMode(false);
                 setFullRefundQty();
-                showRefundActionModal();
-                return;
-            }
-
-            boolean hasQty = false;
-            for (RefundItem item : refundItems) {
-                if (item.getRefundQty() > 0) {
-                    hasQty = true;
-                    break;
+            } else {
+                boolean hasQty = false;
+                for (RefundItem item : refundItems) {
+                    if (item.getRefundQty() > 0) {
+                        hasQty = true;
+                        break;
+                    }
                 }
-            }
-
-            if (!hasQty) {
-                Toast.makeText(this, "Please choose item and enter refund quantity.", Toast.LENGTH_SHORT).show();
-                return;
+                if (!hasQty) {
+                    Toast.makeText(this, "Please choose item and enter refund quantity.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
             }
 
             showRefundActionModal();
@@ -180,6 +174,21 @@ public class RefundItemsActivity extends AppCompatActivity {
         if (imm != null && focus != null) {
             imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
         }
+    }
+
+    /**
+     * Determines whether the current refund quantities represent a full refund
+     * (every item's refund qty equals its original qty) or a partial refund.
+     */
+    private boolean isActuallyFullRefund() {
+        if (refundItems.isEmpty()) return false;
+
+        for (RefundItem item : refundItems) {
+            if (item.getRefundQty() < item.getOriginalQty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void showRefundActionModal() {
@@ -224,7 +233,7 @@ public class RefundItemsActivity extends AppCompatActivity {
         mChipDefective.setOnClickListener(chipClick);
         mChipWrongItem.setOnClickListener(chipClick);
 
-        boolean isFull = rgRefundType.getCheckedRadioButtonId() == R.id.rbFullRefund;
+        boolean isFull = isActuallyFullRefund();
 
         mTvType.setText(isFull ? "Full Refund" : "Partial Refund");
         mTvTotal.setText("₱" + fmt.format(getRefundTotal()));
@@ -239,22 +248,24 @@ public class RefundItemsActivity extends AppCompatActivity {
         if (modal.getWindow() != null) {
             modal.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             modal.getWindow().setSoftInputMode(
-                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
-            );
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
             modal.getWindow().setLayout(
                     (int) (getResources().getDisplayMetrics().widthPixels * 0.92),
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-            );
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         }
 
         mBtnCancel.setOnClickListener(v -> modal.dismiss());
 
         mBtnProcess.setOnClickListener(v -> {
+            // Prevent double-tap
+            mBtnProcess.setEnabled(false);
+
             String reason = !modalChipReason[0].isEmpty()
                     ? modalChipReason[0]
                     : mEtReason.getText().toString().trim();
 
             if (reason.isEmpty()) {
+                mBtnProcess.setEnabled(true);
                 Toast.makeText(this, "Please select or enter a refund reason.", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -263,22 +274,20 @@ public class RefundItemsActivity extends AppCompatActivity {
 
             for (RefundItem item : refundItems) {
                 double refundQty = item.getRefundQty();
-
                 if (refundQty <= 0) continue;
 
                 if (refundQty > item.getOriginalQty()) {
-                    Toast.makeText(
-                            this,
+                    mBtnProcess.setEnabled(true);
+                    Toast.makeText(this,
                             "Refund qty exceeds sold qty for " + item.getItemName(),
-                            Toast.LENGTH_SHORT
-                    ).show();
+                            Toast.LENGTH_SHORT).show();
                     return;
                 }
-
                 selectedItems.add(item);
             }
 
             if (selectedItems.isEmpty()) {
+                mBtnProcess.setEnabled(true);
                 Toast.makeText(this, "Please enter at least one refund quantity.", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -286,12 +295,13 @@ public class RefundItemsActivity extends AppCompatActivity {
             double refundTotal = getRefundTotal();
 
             if (refundTotal > originalTransactionTotal) {
+                mBtnProcess.setEnabled(true);
                 Toast.makeText(this, "Refund total cannot exceed transaction total.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             modal.dismiss();
-            showRefundConfirmDialog(reason, selectedItems, refundTotal);
+            processRefund(reason, selectedItems);
         });
     }
 
@@ -443,54 +453,11 @@ public class RefundItemsActivity extends AppCompatActivity {
         return total;
     }
 
-    private void showRefundConfirmDialog(
-            String reason,
-            List<RefundItem> selectedItems,
-            double refundTotal
-    ) {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_confirm_refund, null);
-
-        TextView tvTrxNo = dialogView.findViewById(R.id.tvRefundConfirmTrxNo);
-        TextView tvType = dialogView.findViewById(R.id.tvRefundConfirmType);
-        TextView tvItems = dialogView.findViewById(R.id.tvRefundConfirmItems);
-        TextView tvReason = dialogView.findViewById(R.id.tvRefundConfirmReason);
-        TextView tvTotal = dialogView.findViewById(R.id.tvRefundConfirmTotal);
-        Button btnCancel = dialogView.findViewById(R.id.btnRefundDialogCancel);
-        Button btnConfirm = dialogView.findViewById(R.id.btnRefundDialogConfirm);
-
-        boolean isFull = rgRefundType.getCheckedRadioButtonId() == R.id.rbFullRefund;
-
-        tvTrxNo.setText(etTransactionNo.getText().toString().trim());
-        tvType.setText(isFull ? "Full Refund" : "Partial Refund");
-        tvItems.setText(selectedItems.size() + " item(s)");
-        tvReason.setText(reason);
-        tvTotal.setText("₱" + fmt.format(refundTotal));
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setCancelable(false)
-                .create();
-
-        dialog.show();
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            dialog.getWindow().setLayout(
-                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92),
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-            );
-        }
-
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
-
-        btnConfirm.setOnClickListener(v -> {
-            dialog.dismiss();
-            processRefund(reason, selectedItems);
-        });
-    }
-
     private void processRefund(String reason, List<RefundItem> selectedItems) {
         btnProcessRefund.setEnabled(false);
+
+        // Compute the actual refund type from quantities, not radio buttons.
+        final boolean isFull = isActuallyFullRefund();
 
         new Thread(() -> {
             HttpURLConnection conn = null;
@@ -511,12 +478,7 @@ public class RefundItemsActivity extends AppCompatActivity {
                 body.put("transaction_id", transactionId);
                 body.put("user_id", userId);
                 body.put("reason", reason);
-                body.put(
-                        "refund_type",
-                        rgRefundType.getCheckedRadioButtonId() == R.id.rbFullRefund
-                                ? "full"
-                                : "partial"
-                );
+                body.put("refund_type", isFull ? "full" : "partial");
 
                 JSONArray itemsArr = new JSONArray();
 

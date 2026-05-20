@@ -85,15 +85,35 @@
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnConfirm"
-        android:layout_width="72dp"
+        android:layout_width="62dp"
         android:layout_height="36dp"
         android:layout_marginStart="6dp"
         android:text="Confirm"
         android:textAllCaps="false"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
         android:backgroundTint="#00A651"
         android:textColor="#FFFFFF"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:minWidth="0dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnDeny"
+        android:layout_width="54dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="4dp"
+        android:text="Deny"
+        android:textAllCaps="false"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:backgroundTint="#C62828"
+        android:textColor="#FFFFFF"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:minWidth="0dp"
         android:focusable="false"
         android:focusableInTouchMode="false" />
 

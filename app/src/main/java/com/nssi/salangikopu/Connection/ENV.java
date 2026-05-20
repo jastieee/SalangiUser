@@ -3,7 +3,7 @@ package com.nssi.salangikopu.Connection;
 public class ENV {
 
     public static final String HOST = "app.3ecandy.com";
-    public static final String PATH = "salangi_mobile";
+    public static final String PATH = "mobile_api";
 
     public static final String API_BASE_URL = "https://" + HOST + "/" + PATH;
 
@@ -37,6 +37,8 @@ public class ENV {
     public static final String BAD_ORDER_LOOKUP_URL = API_BASE_URL + "/bad_order_lookup.php";
     public static final String SAVE_BAD_ORDER_URL = API_BASE_URL + "/save_bad_order.php";
     public static final String SUPPLIERS_URL = API_BASE_URL + "/suppliers.php";
+    //    public static final String SUPPLIERS_LIST_URL     = API_BASE_URL + "suppliers/suppliers_list.php";
+    public static final String TRANSFER_DENY_URL = API_BASE_URL + "/transfer_deny.php";
 
     public static final String MOD_BAD_ORDER = "Bad Order - Mobile";
     // module names if still needed in app logic

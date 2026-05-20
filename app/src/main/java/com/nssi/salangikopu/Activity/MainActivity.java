@@ -103,14 +103,13 @@ public class MainActivity extends AppCompatActivity {
 
         cardWarehouseInventory.setOnClickListener(v -> {
             Intent intent = new Intent(this, WarehouseInventoryActivity.class);
-            intent.putExtra(WarehouseInventoryActivity.EXTRA_WAREHOUSE_ID,   warehouseId);
-            intent.putExtra(WarehouseInventoryActivity.EXTRA_WAREHOUSE_NAME, warehouseName);
+            intent.putExtra(WarehouseInventoryActivity.EXTRA_USER_ID, userId);
             startActivity(intent);
         });
 
         cardStoreInventory.setOnClickListener(v -> {
-            Intent intent = new Intent(this, StoreInventoryActivity.class);
-            intent.putExtra("store_id", storeId);
+            Intent intent = new Intent(this, com.nssi.salangikopu.Activity.StoreInventoryActivity.class);
+            intent.putExtra(com.nssi.salangikopu.Activity.StoreInventoryActivity.EXTRA_USER_ID, userId);
             startActivity(intent);
         });
 

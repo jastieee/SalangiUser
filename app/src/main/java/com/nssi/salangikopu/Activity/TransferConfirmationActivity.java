@@ -68,7 +68,10 @@ public class TransferConfirmationActivity extends AppCompatActivity {
         storeId = getIntent().getIntExtra("store_id", -1);
 
         adapter = new TransferConfirmationAdapter(
-                this, filteredItems, this::onConfirmClicked
+                this,
+                filteredItems,
+                this::onConfirmClicked,
+                this::onDenyClicked
         );
         listTransfers.setAdapter(adapter);
 
@@ -77,7 +80,7 @@ public class TransferConfirmationActivity extends AppCompatActivity {
             openTransferDetails(item);
         });
 
-        List<String> statuses = Arrays.asList("PENDING", "TRANSFER COMPLETE", "ALL");
+        List<String> statuses = Arrays.asList("PENDING", "TRANSFER COMPLETE", "DENIED", "ALL");
         ArrayAdapter<String> sa = new ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, statuses
         );
@@ -96,16 +99,9 @@ public class TransferConfirmationActivity extends AppCompatActivity {
         });
 
         etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int i, int c, int a) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int i, int b, int c) {
+            @Override public void beforeTextChanged(CharSequence s, int i, int c, int a) {}
+            @Override public void afterTextChanged(Editable s) {}
+            @Override public void onTextChanged(CharSequence s, int i, int b, int c) {
                 filterList(s.toString());
             }
         });
@@ -120,7 +116,6 @@ public class TransferConfirmationActivity extends AppCompatActivity {
 
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 URL url = new URL(ENV.TRANSFER_DETAILS_URL + "?transfer_id=" + item.getTransferId());
                 conn = (HttpURLConnection) url.openConnection();
@@ -134,52 +129,37 @@ public class TransferConfirmationActivity extends AppCompatActivity {
                         ? conn.getInputStream()
                         : conn.getErrorStream();
 
-                if (is == null) {
-                    throw new Exception("Empty server response");
-                }
+                if (is == null) throw new Exception("Empty server response");
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
-
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 String raw = res.toString().trim();
-
                 if (!raw.startsWith("{")) {
                     throw new Exception("Server did not return JSON:\n" + raw);
                 }
 
                 JSONObject json = new JSONObject(raw);
 
-//                JSONObject json = new JSONObject(res.toString());
-
                 if (!json.optBoolean("success", false)) {
                     throw new Exception(json.optString("message", "Failed to load transfer details"));
                 }
 
                 JSONArray arr = json.getJSONArray("items");
-
                 StringBuilder details = new StringBuilder();
 
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject obj = arr.getJSONObject(i);
-
                     int qty = (int) obj.optDouble("quantity", 0);
                     double unitPrice = obj.optDouble("unit_price", 0);
 
                     details.append(i + 1).append(". ")
-                            .append(cleanItemName(
-                                    obj.optString("description", "No description")
-                            ))
-                            .append("\nQty: ")
-                            .append(qty)
-                            .append("\nUnit Price: ₱")
-                            .append(String.format("%.2f", unitPrice))
+                            .append(cleanItemName(obj.optString("description", "No description")))
+                            .append("\nQty: ").append(qty)
+                            .append("\nUnit Price: ₱").append(String.format("%.2f", unitPrice))
                             .append("\n\n");
                 }
 
@@ -201,10 +181,8 @@ public class TransferConfirmationActivity extends AppCompatActivity {
 
             } catch (Exception e) {
                 e.printStackTrace();
-
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
-
                     showStyledDialog(
                             "Load Failed",
                             "Could not load transfer items.",
@@ -217,12 +195,12 @@ public class TransferConfirmationActivity extends AppCompatActivity {
                             null
                     );
                 });
-
             } finally {
                 if (conn != null) conn.disconnect();
             }
         }).start();
     }
+
     private AlertDialog showStyledDialog(
             String title,
             String subtitle,
@@ -252,6 +230,7 @@ public class TransferConfirmationActivity extends AppCompatActivity {
         tvDialogMessage.setMovementMethod(new ScrollingMovementMethod());
         tvDialogMessage.setVerticalScrollBarEnabled(true);
         tvDialogMessage.setMaxLines(12);
+
         if (highlightLabel == null || highlightValue == null) {
             layoutDialogHighlight.setVisibility(View.GONE);
         } else {
@@ -296,7 +275,6 @@ public class TransferConfirmationActivity extends AppCompatActivity {
 
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 URL url = new URL(ENV.TRANSFER_LIST_URL + "?store_id=" + storeId);
                 conn = (HttpURLConnection) url.openConnection();
@@ -310,19 +288,16 @@ public class TransferConfirmationActivity extends AppCompatActivity {
                         ? conn.getInputStream()
                         : conn.getErrorStream();
 
-                if (is == null) {
-                    throw new Exception("Empty server response");
-                }
+                if (is == null) throw new Exception("Empty server response");
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
+
                 boolean success = json.optBoolean("success", false);
 
                 if (!success) {
@@ -412,7 +387,7 @@ public class TransferConfirmationActivity extends AppCompatActivity {
                         "From: " + item.getWarehouseName() + "\n" +
                         "To: " + item.getStoreName() + "\n" +
                         "Items: " + item.getItemCount() + "\n\n" +
-                        "This will deduct stock from warehouse and add stock to store inventory.",
+                        "This will deduct stock from source and add stock to destination.",
                 "Transfer No:",
                 item.getTransferNo(),
                 "Confirm",
@@ -422,12 +397,29 @@ public class TransferConfirmationActivity extends AppCompatActivity {
         );
     }
 
+    private void onDenyClicked(TransferConfirmationItem item) {
+        showStyledDialog(
+                "Deny Transfer",
+                "This will close the transfer.",
+                "Deny transfer " + item.getTransferNo() + "?\n\n" +
+                        "From: " + item.getWarehouseName() + "\n" +
+                        "To: " + item.getStoreName() + "\n" +
+                        "Items: " + item.getItemCount() + "\n\n" +
+                        "No stock will be moved. The transfer will be closed and you can scan the items into a new transfer if needed.",
+                "Transfer No:",
+                item.getTransferNo(),
+                "Deny",
+                "Cancel",
+                () -> processDenial(item),
+                null
+        );
+    }
+
     private void processConfirmation(TransferConfirmationItem transfer) {
         progressBar.setVisibility(View.VISIBLE);
 
         new Thread(() -> {
             HttpURLConnection conn = null;
-
             try {
                 URL url = new URL(ENV.TRANSFER_CONFIRM_URL);
                 conn = (HttpURLConnection) url.openConnection();
@@ -453,16 +445,12 @@ public class TransferConfirmationActivity extends AppCompatActivity {
                         ? conn.getInputStream()
                         : conn.getErrorStream();
 
-                if (is == null) {
-                    throw new Exception("Empty server response");
-                }
+                if (is == null) throw new Exception("Empty server response");
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is));
                 StringBuilder res = new StringBuilder();
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    res.append(line);
-                }
+                while ((line = reader.readLine()) != null) res.append(line);
                 reader.close();
 
                 JSONObject json = new JSONObject(res.toString());
@@ -481,8 +469,8 @@ public class TransferConfirmationActivity extends AppCompatActivity {
                                 "Transfer Confirmed",
                                 "Stock movement completed successfully.",
                                 transfer.getTransferNo() + " confirmed.\n\n" +
-                                        "✓ Warehouse stock deducted\n" +
-                                        "✓ Store inventory updated",
+                                        "✓ Source stock deducted\n" +
+                                        "✓ Destination inventory updated",
                                 "Transfer No:",
                                 transfer.getTransferNo(),
                                 "OK",
@@ -527,8 +515,103 @@ public class TransferConfirmationActivity extends AppCompatActivity {
         }).start();
     }
 
-    private String cleanItemName(String value) {
+    private void processDenial(TransferConfirmationItem transfer) {
+        progressBar.setVisibility(View.VISIBLE);
 
+        new Thread(() -> {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(ENV.TRANSFER_DENY_URL);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(15000);
+
+                JSONObject body = new JSONObject();
+                body.put("transfer_id", transfer.getTransferId());
+
+                OutputStream os = conn.getOutputStream();
+                os.write(body.toString().getBytes("UTF-8"));
+                os.flush();
+                os.close();
+
+                int statusCode = conn.getResponseCode();
+                InputStream is = (statusCode >= 200 && statusCode < 300)
+                        ? conn.getInputStream()
+                        : conn.getErrorStream();
+
+                if (is == null) throw new Exception("Empty server response");
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                StringBuilder res = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) res.append(line);
+                reader.close();
+
+                JSONObject json = new JSONObject(res.toString());
+                boolean success = json.optBoolean("success", false);
+                String message = json.optString("message", "Denial failed");
+
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+
+                    if (success) {
+                        transfer.setStatus("DENIED");
+                        adapter.notifyDataSetChanged();
+                        updatePendingCount();
+
+                        showStyledDialog(
+                                "Transfer Denied",
+                                "The transfer was closed.",
+                                message + "\n\nNo inventory was moved.",
+                                "Transfer No:",
+                                transfer.getTransferNo(),
+                                "OK",
+                                "Close",
+                                null,
+                                null
+                        );
+                    } else {
+                        showStyledDialog(
+                                "Denial Failed",
+                                "The transfer could not be denied.",
+                                message,
+                                "Transfer No:",
+                                transfer.getTransferNo(),
+                                "OK",
+                                "Close",
+                                null,
+                                null
+                        );
+                    }
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    showStyledDialog(
+                            "Denial Failed",
+                            "An error occurred while denying.",
+                            e.getMessage(),
+                            "Transfer No:",
+                            transfer.getTransferNo(),
+                            "Retry",
+                            "Close",
+                            () -> processDenial(transfer),
+                            null
+                    );
+                });
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        }).start();
+    }
+
+    private String cleanItemName(String value) {
         if (value == null) return "";
 
         String text = value
@@ -539,7 +622,6 @@ public class TransferConfirmationActivity extends AppCompatActivity {
                 .trim();
 
         text = text.replaceFirst("\\s*-\\s+.*$", "").trim();
-
         text = text.replaceFirst("(?i)\\s+!\\s*.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+is the\\s+.*$", "").trim();
         text = text.replaceFirst("(?i)\\s+perfect for\\s+.*$", "").trim();
@@ -549,6 +631,7 @@ public class TransferConfirmationActivity extends AppCompatActivity {
 
         return text.replaceAll("\\s+", " ").trim();
     }
+
     @Override
     protected void onResume() {
         super.onResume();
